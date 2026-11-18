@@ -302,7 +302,7 @@
   <!-- HALAMAN 2: SELURUH DATA DENGAN SISTEM RENDER CERDAS (ANTI-LAG) -->
   <div id="page-full" class="hidden">
     <div class="header">
-      <button class="btn-back" onclick="backToSearch()">
+      <button class="btn-back" onclick="history.back()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="19" y1="12" x2="5" y2="12"></line>
           <polyline points="12 19 5 12 12 5"></polyline>
@@ -346,7 +346,7 @@
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTvjBzHOvvGXtiO2WqzpK8EacTQ0uenF5lfHfrekELgk0LXYyTUzeWAyftX18ZwsgefThcLw4yDqM4-/pub?gid=0&single=true&output=csv";
 
   let allData = [];
-  let isFullTableRendered = false;
+  let currentWindowRange = { start: 0, end: 0 };
 
   Papa.parse(CSV_URL, {
     download: true,
@@ -537,26 +537,82 @@
     document.getElementById("statusBar").innerHTML = `<span class="status-dot"></span> Siap • Total ${allData.length.toLocaleString('id-ID')} data dimuat`;
   }
 
-  // OPTIMASI ANTI-LAG: Render tabel besar dibagi ke beberapa gelombang (chunks) kecil
+  // FUNGSI RENDER SMART & RINGAN (WINDOWING ~500 BARIS SAJA)
   function renderFullTableSmart(targetUid) {
     const tbody = document.getElementById("fullTableBody");
-    if (isFullTableRendered) {
+    const targetIndex = allData.findIndex(d => d.uid === targetUid);
+    if (targetIndex === -1) return;
+
+    if (document.getElementById(`row-${targetUid}`)) {
       scrollToTarget(targetUid);
       return;
     }
 
-    tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 30px; color: #2563eb; font-weight:600;">Memuat seluruh data tabel...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 30px; color: #2563eb; font-weight:600;">Menyiapkan posisi data...</td></tr>`;
 
-    setTimeout(() => {
+    const WINDOW_RADIUS = 250;
+    const startIdx = Math.max(0, targetIndex - WINDOW_RADIUS);
+    const endIdx = Math.min(allData.length, targetIndex + WINDOW_RADIUS);
+    currentWindowRange = { start: startIdx, end: endIdx };
+
+    requestAnimationFrame(() => {
       let htmlChunk = "";
-      // Render bertahap agar browser tidak freeze
-      for (let i = 0; i < allData.length; i++) {
+
+      if (startIdx > 0) {
+        htmlChunk += `
+          <tr id="load-prev-row">
+            <td colspan="17" class="center" style="background:#f8fafc; padding:10px;">
+              <button onclick="expandWindow('prev', ${targetUid})" style="padding:6px 12px; cursor:pointer; font-weight:600; color:#2563eb; border:1px solid #93c5fd; border-radius:6px; background:white;">
+                ⬆️ Muat 500 data sebelumnya (Tersisa ${startIdx.toLocaleString('id-ID')} baris di atas)
+              </button>
+            </td>
+          </tr>`;
+      }
+
+      for (let i = startIdx; i < endIdx; i++) {
         htmlChunk += createRowHtml(allData[i], true);
       }
+
+      if (endIdx < allData.length) {
+        htmlChunk += `
+          <tr id="load-next-row">
+            <td colspan="17" class="center" style="background:#f8fafc; padding:10px;">
+              <button onclick="expandWindow('next', ${targetUid})" style="padding:6px 12px; cursor:pointer; font-weight:600; color:#2563eb; border:1px solid #93c5fd; border-radius:6px; background:white;">
+                ⬇️ Muat 500 data berikutnya (Tersisa ${(allData.length - endIdx).toLocaleString('id-ID')} baris di bawah)
+              </button>
+            </td>
+          </tr>`;
+      }
+
       tbody.innerHTML = htmlChunk;
-      isFullTableRendered = true;
       scrollToTarget(targetUid);
-    }, 20);
+    });
+  }
+
+  function expandWindow(direction, highlightUid) {
+    const STEP = 500;
+    if (direction === 'prev') {
+      currentWindowRange.start = Math.max(0, currentWindowRange.start - STEP);
+    } else {
+      currentWindowRange.end = Math.min(allData.length, currentWindowRange.end + STEP);
+    }
+
+    const tbody = document.getElementById("fullTableBody");
+    let htmlChunk = "";
+
+    if (currentWindowRange.start > 0) {
+      htmlChunk += `<tr id="load-prev-row"><td colspan="17" class="center" style="background:#f8fafc; padding:10px;"><button onclick="expandWindow('prev', ${highlightUid})" style="padding:6px 12px; cursor:pointer; font-weight:600; color:#2563eb; border:1px solid #93c5fd; border-radius:6px; background:white;">⬆️ Muat 500 data sebelumnya (${currentWindowRange.start.toLocaleString('id-ID')} baris lagi)</button></td></tr>`;
+    }
+    for (let i = currentWindowRange.start; i < currentWindowRange.end; i++) {
+      htmlChunk += createRowHtml(allData[i], true);
+    }
+    if (currentWindowRange.end < allData.length) {
+      htmlChunk += `<tr id="load-next-row"><td colspan="17" class="center" style="background:#f8fafc; padding:10px;"><button onclick="expandWindow('next', ${highlightUid})" style="padding:6px 12px; cursor:pointer; font-weight:600; color:#2563eb; border:1px solid #93c5fd; border-radius:6px; background:white;">⬇️ Muat 500 data berikutnya (${(allData.length - currentWindowRange.end).toLocaleString('id-ID')} baris lagi)</button></td></tr>`;
+    }
+
+    tbody.innerHTML = htmlChunk;
+    const targetRow = document.getElementById(`row-${highlightUid}`);
+    if (targetRow) targetRow.classList.add("highlighted-row");
   }
 
   function scrollToTarget(uid) {
@@ -569,14 +625,16 @@
       document.getElementById("focusInfo").textContent = 
         `Fokus Data: ${selectedItem.nama} (DPT Final: ${selectedItem.dptFinal} • TPS ${selectedItem.tps})`;
       
-      setTimeout(() => {
-        targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 50);
+      // Menggunakan behavior 'auto' agar instan dan tidak lag di HP
+      targetRow.scrollIntoView({ behavior: "auto", block: "center" });
     }
   }
 
   function openFullView(uid) {
     document.getElementById("searchInput").blur();
+
+    // Mendaftarkan history agar tombol back HP berfungsi
+    history.pushState({ page: 'full', uid: uid }, "", "#detail");
 
     document.getElementById("page-search").classList.add("hidden");
     document.getElementById("page-full").classList.remove("hidden");
@@ -588,6 +646,14 @@
     document.getElementById("page-full").classList.add("hidden");
     document.getElementById("page-search").classList.remove("hidden");
   }
+
+  // Mendengarkan tombol kembali (back) fisik/bawaan HP
+  window.addEventListener('popstate', function(event) {
+    const pageFull = document.getElementById("page-full");
+    if (pageFull && !pageFull.classList.contains('hidden')) {
+      backToSearch();
+    }
+  });
 </script>
 </body>
 </html>
