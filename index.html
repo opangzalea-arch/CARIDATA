@@ -33,12 +33,23 @@
     table { width: 100%; border-collapse: collapse; font-size: 11px; white-space: nowrap; }
     th, td { border: 1px solid #94a3b8; padding: 4px 6px; }
     
-    /* Header Tabel ala Excel */
-    thead th { background: #92d050; color: #000; font-weight: bold; text-align: center; position: sticky; top: 0; z-index: 10; }
+    /* Header Tabel ala Excel & Text Wrapping */
+    thead th { 
+      background: #92d050; 
+      color: #000; 
+      font-weight: bold; 
+      text-align: center; 
+      position: sticky; 
+      top: 0; 
+      z-index: 10; 
+      white-space: normal !important; /* Membuat teks header bisa turun ke bawah (wrapping) */
+      word-break: break-word;
+      vertical-align: middle;
+    }
     th.bg-yellow { background: #ffff00 !important; }
     
-    /* Pengaturan Lebar Kolom Khusus */
-    th.col-digit, td.col-digit { width: 55px; min-width: 55px; max-width: 55px; text-align: center; }
+    /* Pengaturan Lebar Kolom Khusus (Sedikit dilebarkan agar teks wrapping muat rapi) */
+    th.col-digit, td.col-digit { width: 70px; min-width: 70px; max-width: 70px; text-align: center; }
     
     th.col-nama-header, td.col-nama { 
       width: 180px; 
