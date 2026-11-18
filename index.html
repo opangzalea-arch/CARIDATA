@@ -1,852 +1,276 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <base target="_top">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Simulasi e-Voting Pilkades</title>
-
-  <!-- Pustaka jsQR Native Scanner -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pencarian Data DPT</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
-    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { margin: 0; background: #f1f5f9; color: #1e293b; }
+    
+    /* Header & Search */
+    .header { position: sticky; top: 0; background: #0f172a; color: white; padding: 14px 16px; z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+    .header h2 { margin: 0 0 10px 0; font-size: 18px; }
+    .search-box { display: flex; gap: 8px; }
+    input[type="text"] { flex: 1; padding: 10px 14px; border: none; border-radius: 8px; font-size: 15px; outline: none; }
+    .btn { padding: 10px 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
+    .btn-clear { background: #475569; color: white; }
+    .btn-back { background: #2563eb; color: white; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+    .status-bar { font-size: 13px; color: #94a3b8; margin-top: 8px; }
 
-    html, body {
-      width: 100%;
-      min-height: 100vh;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      /* Background gradasi biru muda di atas ke putih di bawah */
-      background: linear-gradient(to bottom, #33b5e5 0%, #a6e3f5 25%, #f0f2f5 55%);
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      overflow-x: hidden;
-    }
+    /* Container */
+    .container { max-width: 900px; margin: 0 auto; padding: 12px; }
+    .hidden { display: none !important; }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-    }
+    /* Halaman 1: Hasil Pencarian (Card List) */
+    .result-card { background: white; padding: 14px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer; border-left: 5px solid #2563eb; transition: transform 0.1s; }
+    .result-card:active { transform: scale(0.99); background: #eff6ff; }
+    .card-top { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #2563eb; margin-bottom: 4px; }
+    .card-name { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+    .card-meta { font-size: 13px; color: #475569; line-height: 1.4; }
+    .badge { display: inline-block; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; color: #334155; }
 
-    /* HEADER TANPA FRAME MERAH */
-    header {
-      width: 100%;
-      background: transparent;
-      color: #0b2545;
-      text-align: center;
-      padding: 6px 4px;
-      flex-shrink: 0;
-    }
-
-    header h1 {
-      font-size: 13px;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-      line-height: 1.2;
-      color: #0b2545;
-      text-shadow: 0 1px 2px rgba(255,255,255,0.6);
-    }
-
-    header p {
-      font-size: 9px;
-      font-weight: 700;
-      color: #133a5e;
-      opacity: 0.95;
-      line-height: 1;
-    }
-
-    /* CONTAINER UTAMA LAYAR */
-    .screen {
-      display: none;
-      width: 100%;
-      max-width: 1000px;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 8px;
-    }
-
-    .screen.active { 
-      display: flex; 
-    }
-
-    /* LAYAR SCANNER QR CODE FULLSCREEN */
-    #screen-scan {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: #000;
-      z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      overflow: hidden;
-    }
-
-    #screen-scan.hidden { display: none !important; }
-
-    /* Video Background Fullscreen */
-    #video-element {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 1;
-    }
-
-    /* Background Putih Memanjang di Atas untuk Teks Arahan */
-    .scan-header-overlay {
-      position: relative;
-      z-index: 10;
-      width: 100%;
-      padding: 12px 15px;
-      text-align: center;
-      background-color: #ffffff;
-      color: #000000;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-
-    .scan-header-overlay h2 {
-      font-size: 16px;
-      font-weight: 800;
-      margin-bottom: 2px;
-      color: #000000;
-    }
-
-    .scan-header-overlay p {
-      font-size: 12px;
-      font-weight: 600;
-      color: #333333;
-    }
-
-    /* Target Frame Pemindaian Hijau */
-    .scan-frame-wrapper {
-      position: relative;
-      z-index: 10;
-      width: 240px;
-      height: 240px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Garis Sudut Hijau */
-    .scan-corner {
-      position: absolute;
-      width: 35px;
-      height: 35px;
-      border-color: #25d366;
-      border-style: solid;
-    }
-
-    .top-left {
-      top: 0;
-      left: 0;
-      border-width: 4px 0 0 4px;
-      border-top-left-radius: 8px;
-    }
-
-    .top-right {
-      top: 0;
-      right: 0;
-      border-width: 4px 4px 0 0;
-      border-top-right-radius: 8px;
-    }
-
-    .bottom-left {
-      bottom: 0;
-      left: 0;
-      border-width: 0 0 4px 4px;
-      border-bottom-left-radius: 8px;
-    }
-
-    .bottom-right {
-      bottom: 0;
-      right: 0;
-      border-width: 0 4px 4px 0;
-      border-bottom-right-radius: 8px;
-    }
-
-    /* Status Scan / Pesan Bawah */
-    .scan-footer-overlay {
-      position: relative;
-      z-index: 10;
-      width: 100%;
-      padding: 15px;
-      text-align: center;
-      background: linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0));
-      color: white;
-    }
-
-    .scan-status {
-      font-size: 12px;
-      font-weight: 600;
-      color: #ffffff;
-      min-height: 18px;
-    }
-
-    .scan-status.error { color: #ff4d4d; }
-
-    /* LAYAR VOTE / PEMILIHAN */
-    .candidates-container {
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
-      align-items: flex-start;
-      gap: 6px;
-      width: 100%;
-      margin-bottom: 6px; /* Sedikit jarak ke bawah */
-    }
-
-    .candidate-card {
-      position: relative;
-      background: white;
-      border: 3px solid #0088cc;
-      border-radius: 6px;
-      flex: 1;
-      max-width: 22%;
-      height: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 2px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      overflow: hidden;
-    }
-
-    /* Frame Merah Saat Kandidat Dipilih */
-    .candidate-card.selected {
-      border: 5px solid #d93025 !important;
-      background-color: #fce8e6;
-      box-shadow: 0 0 10px rgba(217, 48, 37, 0.6);
-    }
-
-    /* EFEK BEKAS COBLOSAN PAKU DI AREA DADA (75% DARI ATAS) */
-    .candidate-card.selected::after {
-      content: '';
-      position: absolute;
-      top: 68%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 34px;
-      height: 34px;
-      background: radial-gradient(circle, #000000 30%, #3a220b 60%, transparent 80%);
-      border: 2px dashed #ff1100;
-      border-radius: 50%;
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.8), inset 0 0 6px #000;
-      z-index: 20;
-    }
-
-    .candidate-img-wrapper {
-      width: 100%;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-    }
-
-    .candidate-img-wrapper img {
-      width: 75%;
-      height: auto;
-      display: block;
-      margin: 0 auto;
-    }
-
-    /* BARIS TOMBOL AKSI LAYAR PEMILIHAN */
-    #screen-vote .action-bar {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      position: relative;
-      margin-top: 4px; /* Diberikan jarak sedikit agar tidak menempel */
-    }
-
-    #screen-vote .btn-blue {
-      width: 100%;
-      max-width: 100%;
-      background-color: #1ea3ef;
-    }
-
-    /* Animasi Gambar Tangan Menunjuk ke Bawah (Menyesuaikan sedikit ke bawah) */
-    .pointing-hand {
-      position: absolute;
-      top: -44px; /* Menyesuaikan posisi turun sedikit */
-      left: 50%;
-      transform: translateX(-50%) rotate(180deg);
-      font-size: 52px;
-      z-index: 50;
-      animation: bounceHandDown 0.8s infinite alternate ease-in-out;
-      display: none;
-      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
-    }
-
-    @keyframes bounceHandDown {
-      0% { transform: translateX(-50%) rotate(180deg) translateY(0); }
-      100% { transform: translateX(-50%) rotate(180deg) translateY(10px); }
-    }
-
-    /* LAYAR KONFIRMASI (MEPET KE ATAS) */
-    #screen-confirm {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 0, 0, 0.75);
-      z-index: 2000;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 10px 6px;
-      overflow: hidden;
-    }
-
-    #screen-confirm.active { 
-      display: flex; 
-    }
-
-    .confirm-modal-box {
-      width: 100%;
-      max-width: 520px;
-      background: #ffffff;
-      border-radius: 10px;
-      padding: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .confirm-header-text {
-      width: 100%;
-      text-align: left;
-      margin-bottom: 6px;
-    }
-
-    .confirm-header-text h3 {
-      font-size: 14px;
-      font-weight: 900;
-      color: #1a2a3a;
-      text-transform: uppercase;
-      margin-bottom: 1px;
-    }
-
-    .confirm-header-text p {
-      font-size: 11px;
-      font-weight: 600;
-      color: #555;
-    }
-
-    #confirm-container {
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
-      align-items: center;
-      gap: 12px;
-      background: #fafafa;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
-      padding: 8px;
-      margin-bottom: 10px;
-    }
-
-    #confirm-container .candidate-card {
-      border: 2px solid #0088cc !important;
-      flex: 0 1 110px;
-      max-width: 35%;
-      height: auto;
-      padding: 2px;
-      background: white;
-    }
-
-    #confirm-container .candidate-card::after {
-      display: none !important;
-    }
-
-    .action-bar {
-      width: 100%;
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    .btn {
-      flex: 1;
-      height: 38px;
-      border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 900;
-      color: #ffffff;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-
-    .btn-blue { background-color: #1ea3ef; }
-    .btn-danger { background-color: #d93025; }
-
-    /* CUSTOM TOAST / ALERT POPUP POSISI AGAK KE ATAS DENGAN BACKGROUND TRANSPARAN */
-    #custom-toast-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 0, 0, 0.45);
-      z-index: 3000;
-      align-items: flex-start;
-      justify-content: center;
-      padding-top: 14vh;
-    }
-
-    .toast-box {
-      background: rgba(255, 255, 255, 0.96);
-      padding: 18px 34px;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 800;
-      color: #333;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.3);
-      text-align: center;
-      border: 2px solid #e0e0e0;
-      min-width: 260px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Ikon Ceklis Hijau */
-    .success-check-circle {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background-color: #25d366;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 10px;
-      box-shadow: 0 3px 8px rgba(37, 211, 102, 0.4);
-    }
-
-    .success-check-circle svg {
-      width: 28px;
-      height: 28px;
-      stroke: #ffffff;
-      stroke-width: 3.5;
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .toast-title {
-      font-size: 17px;
-      font-weight: 900;
-      color: #1a2a3a;
-      margin-bottom: 3px;
-    }
-
-    .toast-subtitle {
-      font-size: 13px;
-      font-weight: 600;
-      color: #555555;
-    }
-
-    /* LAYAR SELESAI (CADANGAN) */
-    .empty-msg {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      font-weight: 900;
-      color: #155724;
-      background-color: #d4edda;
-      border: 2px solid #c3e6cb;
-      border-radius: 8px;
-      text-align: center;
-      padding: 24px 16px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
+    /* Halaman 2: Seluruh Data (Tabel) */
+    .table-wrapper { background: white; border-radius: 8px; overflow-x: auto; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+    th { background: #1e293b; color: white; padding: 10px 8px; text-align: left; position: sticky; top: 0; }
+    td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; }
+    
+    /* Sorotan Baris Terpilih */
+    tr.highlighted-row { background-color: #fef08a !important; outline: 2px solid #eab308; font-weight: 600; }
+    tr.highlighted-row td { color: #0f172a; }
   </style>
 </head>
 <body>
 
-  <!-- LAYAR SCAN QR CODE FULLSCREEN -->
-  <div id="screen-scan">
-    <video id="video-element" playsinline muted></video>
-
-    <div class="scan-header-overlay">
-      <h2>Arahkan Kamera ke QR Code</h2>
-      <p>Pastikan QR Code Terlihat Jelas dan dalam Frame</p>
+  <!-- HALAMAN 1: PENCARIAN FLEKSIBEL -->
+  <div id="page-search">
+    <div class="header">
+      <h2>Pencarian Data DPT</h2>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Ketik Nama, NIK, Alias, atau RT 1 RW 5 TPS 6..." disabled>
+        <button class="btn btn-clear" onclick="resetSearch()">Reset</button>
+      </div>
+      <div class="status-bar" id="statusBar">Memuat data dari Google Sheets...</div>
     </div>
 
-    <div class="scan-frame-wrapper">
-      <div class="scan-corner top-left"></div>
-      <div class="scan-corner top-right"></div>
-      <div class="scan-corner bottom-left"></div>
-      <div class="scan-corner bottom-right"></div>
-    </div>
-
-    <div class="scan-footer-overlay">
-      <div id="scan-status" class="scan-status">Menghubungkan Kamera...</div>
-    </div>
+    <div class="container" id="resultsList"></div>
   </div>
 
-  <header id="main-header" style="display:none;">
-    <h1>SURAT SUARA E-VOTING PILKADES</h1>
-    <p>SIMULASI PEMILIHAN</p>
-  </header>
-
-  <!-- LAYAR PILIH KANDIDAT -->
-  <div id="screen-vote" class="screen">
-    <div class="candidates-container">
-      <div class="candidate-card" onclick="toggleSelect(1)">
-        <div class="candidate-img-wrapper"><img src="https://lh3.googleusercontent.com/d/1GqYT_b1T1qntmzL5hNhKNW2BZBtbQ8-T"></div>
-      </div>
-      <div class="candidate-card" onclick="toggleSelect(2)">
-        <div class="candidate-img-wrapper"><img src="https://lh3.googleusercontent.com/d/1E9U-2D22JrZ7FMRtK9Yw0GYr8pQjA8Wh"></div>
-      </div>
-      <div class="candidate-card" onclick="toggleSelect(3)">
-        <div class="candidate-img-wrapper"><img src="https://lh3.googleusercontent.com/d/1y8Av8LxcisDf37_FX-JK5uPadVvC1iFL"></div>
-      </div>
-      <div class="candidate-card" onclick="toggleSelect(4)">
-        <div class="candidate-img-wrapper"><img src="https://lh3.googleusercontent.com/d/1Aty0kQHuVY3lZpvkrgA4DEOU2YW50qLb"></div>
-      </div>
+  <!-- HALAMAN 2: SELURUH DATA EXCEL -->
+  <div id="page-full" class="hidden">
+    <div class="header">
+      <button class="btn btn-back" onclick="backToSearch()">← Kembali ke Hasil Pencarian</button>
+      <div id="focusInfo" style="font-size: 13px; color: #cbd5e1;"></div>
     </div>
 
-    <div class="action-bar">
-      <button class="btn btn-blue" onclick="goToConfirm()">PILIH KANDIDAT INI</button>
-      <div id="hand-pointer" class="pointing-hand">👆</div>
-    </div>
-  </div>
-
-  <!-- LAYAR KONFIRMASI -->
-  <div id="screen-confirm">
-    <div class="confirm-modal-box">
-      <div class="confirm-header-text">
-        <h3>Konfirmasi Pemilihan</h3>
-        <p>Apakah Anda yakin akan memilih kandidat ini?</p>
-      </div>
-      
-      <div id="confirm-container"></div>
-
-      <div class="action-bar">
-        <button class="btn btn-danger" onclick="resetAndBack()">ULANGI</button>
-        <button class="btn btn-blue" onclick="finishVote()">PILIH</button>
+    <div class="container" style="max-width: 100%;">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>NO</th>
+              <th>DPT AWAL</th>
+              <th>DPT FINAL</th>
+              <th>DPT TPS</th>
+              <th>NIK</th>
+              <th>NAMA LENGKAP</th>
+              <th>ALIAS</th>
+              <th>KADER</th>
+              <th>KOD</th>
+              <th>TEMPAT LAHIR</th>
+              <th>TGL LAHIR</th>
+              <th>JK</th>
+              <th>STS</th>
+              <th>ALAMAT</th>
+              <th>RT</th>
+              <th>RW</th>
+              <th>TPS</th>
+            </tr>
+          </thead>
+          <tbody id="fullTableBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <!-- POPUP LOADING / STATUS (MENYIMPAN & BERHASIL DISIMPAN) -->
-  <div id="custom-toast-overlay">
-    <div id="toast-content" class="toast-box">Menyimpan suara...</div>
-  </div>
+<script>
+  // MASUKKAN LINK CSV DARI GOOGLE SHEETS DI SINI
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTvjBzHOvvGXtiO2WqzpK8EacTQ0uenF5lfHfrekELgk0LXYyTUzeWAyftX18ZwsgefThcLw4yDqM4-/pub?gid=0&single=true&output=csv";
 
-  <script>
-    const singleUseQrCodes = [
-      "simopg1", "simopg2", "simopg3",
-      "simopg4", "simopg5", "simopg6",
-      "simopg7", "simopg8", "simopg9", "simopg10",
-      "simopg11", "simopg12", "simopg13",
-      "simopg14", "simopg15", "simopg16", "simopg17",
-      "simopg18", "simopg19", "simopg20"
-    ];
-    const unlimitedQrCodes = ["simulasiopang1", "simulasiopang2"];
-    let usedQrCodes = new Set();
-    let currentActiveUser = "";
+  let allData = [];
+  let isFullTableRendered = false;
 
-    const candidatesData = {
-      1: { img: "https://lh3.googleusercontent.com/d/1GqYT_b1T1qntmzL5hNhKNW2BZBtbQ8-T" },
-      2: { img: "https://lh3.googleusercontent.com/d/1E9U-2D22JrZ7FMRtK9Yw0GYr8pQjA8Wh" },
-      3: { img: "https://lh3.googleusercontent.com/d/1y8Av8LxcisDf37_FX-JK5uPadVvC1iFL" },
-      4: { img: "https://lh3.googleusercontent.com/d/1Aty0kQHuVY3lZpvkrgA4DEOU2YW50qLb" }
-    };
-    
-    let selectedCandidates = new Set();
+  // Muat dan parsing CSV saat halaman dibuka
+  Papa.parse(CSV_URL, {
+    download: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      const rows = results.data;
+      // Lewati 2 baris header (index 0 dan 1) sesuai struktur gambar Excel
+      for (let i = 2; i < rows.length; i++) {
+        const r = rows[i];
+        // Pastikan baris memiliki Nama Lengkap (kolom G / index 6) atau NIK (index 5)
+        if (!r[6] && !r[5]) continue;
 
-    let video = document.getElementById("video-element");
-    let canvasElement = document.createElement("canvas");
-    
-    const WORK_SIZE = 400;
-    canvasElement.width = WORK_SIZE;
-    canvasElement.height = WORK_SIZE;
-    
-    let canvas = canvasElement.getContext("2d", {
-        willReadFrequently: true,
-        alpha: false
+        const record = {
+          uid: i,
+          no: r[0] || "",
+          dptAwal: r[2] || "",
+          dptFinal: r[3] || "",
+          dptTps: r[4] || "",
+          nik: r[5] || "",
+          nama: r[6] || "",
+          alias: r[7] || "",
+          kader: r[8] || "",
+          kod: r[9] || "",
+          tmpLahir: r[10] || "",
+          tglLahir: r[11] || "",
+          jk: r[12] || "",
+          status: r[13] || "",
+          alamat: r[14] || "",
+          rt: r[15] || "",
+          rw: r[16] || "",
+          tps: r[17] || "",
+          // String gabungan untuk pencarian multi-kata fleksibel
+          searchIndex: ""
+        };
+
+        record.searchIndex = [
+          record.no, record.dptAwal, record.dptFinal, record.dptTps,
+          record.nik, record.nama, record.alias, record.kader,
+          record.alamat,
+          `rt${record.rt}`, `rt ${record.rt}`,
+          `rw${record.rw}`, `rw ${record.rw}`,
+          `tps${record.tps}`, `tps ${record.tps}`
+        ].join(" ").toLowerCase();
+
+        allData.push(record);
+      }
+
+      const input = document.getElementById("searchInput");
+      input.disabled = false;
+      document.getElementById("statusBar").textContent = `Siap. Total ${allData.length.toLocaleString('id-ID')} data dimuat.`;
+      input.focus();
+    },
+    error: function() {
+      document.getElementById("statusBar").textContent = "Gagal memuat data. Pastikan link CSV Google Sheets sudah dipublikasikan.";
+    }
+  });
+
+  // Event ketik pencarian real-time
+  document.getElementById("searchInput").addEventListener("input", function(e) {
+    const query = e.target.value.trim().toLowerCase();
+    const listContainer = document.getElementById("resultsList");
+    const statusBar = document.getElementById("statusBar");
+
+    if (!query) {
+      listContainer.innerHTML = "";
+      statusBar.textContent = `Siap. Total ${allData.length.toLocaleString('id-ID')} data dimuat.`;
+      return;
+    }
+
+    // Pisahkan kata kunci berdasarkan spasi agar bisa mencari kombinasi (misal: "reza rt 3 tps 7")
+    const keywords = query.split(/\s+/);
+    const matches = allData.filter(item =>
+      keywords.every(kw => item.searchIndex.includes(kw))
+    );
+
+    statusBar.textContent = `Ditemukan ${matches.length} data relevan` + (matches.length > 100 ? " (menampilkan 100 teratas)" : "");
+
+    // Render maksimal 100 hasil agar tetap ringan di HP
+    const fragment = document.createDocumentFragment();
+    matches.slice(0, 100).forEach(item => {
+      const div = document.createElement("div");
+      div.className = "result-card";
+      div.onclick = () => openFullView(item.uid);
+      div.innerHTML = `
+        <div class="card-top">
+          <span>NO: ${item.no} | DPT FINAL: ${item.dptFinal} | DPT TPS: ${item.dptTps}</span>
+          <span>TPS ${item.tps}</span>
+        </div>
+        <div class="card-name">${item.nama} ${item.alias ? `(${item.alias})` : ""}</div>
+        <div class="card-meta">
+          NIK: ${item.nik} • ${item.jk} (${item.tglLahir})<br>
+          ${item.alamat} — <span class="badge">RT ${item.rt} / RW ${item.rw}</span>
+          ${item.kader ? `<span class="badge" style="background:#fef08a;">Kader: ${item.kader}</span>` : ""}
+        </div>
+      `;
+      fragment.appendChild(div);
     });
 
-    let scanning = false;
-    let nativeDetector = null;
+    listContainer.innerHTML = "";
+    listContainer.appendChild(fragment);
+  });
 
-    if ("BarcodeDetector" in window) {
-      try {
-        nativeDetector = new BarcodeDetector({ formats: ["qr_code"] });
-      } catch (e) {
-        nativeDetector = null;
-      }
-    }
+  function resetSearch() {
+    const input = document.getElementById("searchInput");
+    input.value = "";
+    document.getElementById("resultsList").innerHTML = "";
+    document.getElementById("statusBar").textContent = `Siap. Total ${allData.length.toLocaleString('id-ID')} data dimuat.`;
+    input.focus();
+  }
 
-    function startCamera() {
-      scanning = true;
-      const status = document.getElementById("scan-status");
-      status.className = "scan-status";
-      status.innerText = "Mencari Kamera...";
+  // Bangun tabel penuh hanya satu kali saat pertama kali dibutuhkan
+  function renderFullTableOnce() {
+    if (isFullTableRendered) return;
+    const tbody = document.getElementById("fullTableBody");
+    const rowsHtml = allData.map(item => `
+      <tr id="row-${item.uid}">
+        <td>${item.no}</td>
+        <td>${item.dptAwal}</td>
+        <td>${item.dptFinal}</td>
+        <td>${item.dptTps}</td>
+        <td>${item.nik}</td>
+        <td>${item.nama}</td>
+        <td>${item.alias}</td>
+        <td>${item.kader}</td>
+        <td>${item.kod}</td>
+        <td>${item.tmpLahir}</td>
+        <td>${item.tglLahir}</td>
+        <td>${item.jk}</td>
+        <td>${item.status}</td>
+        <td>${item.alamat}</td>
+        <td>${item.rt}</td>
+        <td>${item.rw}</td>
+        <td>${item.tps}</td>
+      </tr>
+    `).join("");
+    tbody.innerHTML = rowsHtml;
+    isFullTableRendered = true;
+  }
 
-      navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30, max: 30 }
-        },
-        audio: false
-      })
-      .then(function(stream) {
-        video.srcObject = stream;
+  // Pindah ke Halaman 2 dan langsung scroll ke posisi tengah baris terpilih
+  function openFullView(uid) {
+    renderFullTableOnce();
 
-        const track = stream.getVideoTracks()[0];
-        if (track && track.applyConstraints) {
-          track.applyConstraints({
-            advanced: [{ focusMode: "continuous" }]
-          }).catch(() => {});
-        }
+    document.getElementById("page-search").classList.add("hidden");
+    document.getElementById("page-full").classList.remove("hidden");
 
-        video.setAttribute("playsinline", true);
-        video.play();
-        status.innerText = "Siap memindai QR Code...";
-        
-        requestAnimationFrame(processScan);
-      })
-      .catch(function() {
-        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-          .then(function(stream) {
-            video.srcObject = stream;
-            video.setAttribute("playsinline", true);
-            video.play();
-            status.innerText = "Siap memindai QR Code...";
-            requestAnimationFrame(processScan);
-          })
-          .catch(function() {
-            status.className = "scan-status error";
-            status.innerText = "❌ Akses kamera ditolak / tidak ditemukan.";
-          });
-      });
-    }
+    // Hapus sorotan sebelumnya
+    document.querySelectorAll(".highlighted-row").forEach(el => el.classList.remove("highlighted-row"));
 
-    function stopCamera() {
-      scanning = false;
-      if (video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
-      }
-    }
+    const targetRow = document.getElementById(`row-${uid}`);
+    const selectedItem = allData.find(d => d.uid === uid);
 
-    async function processScan() {
-      if (!scanning) return;
-
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        const vw = video.videoWidth;
-        const vh = video.videoHeight;
-
-        if (vw > 0 && vh > 0) {
-          if (nativeDetector) {
-            try {
-              const barcodes = await nativeDetector.detect(video);
-              if (barcodes.length > 0 && barcodes[0].rawValue) {
-                handleQrDetected(barcodes[0].rawValue);
-                return;
-              }
-            } catch (e) {
-              nativeDetector = null;
-            }
-          }
-
-          if (!nativeDetector && typeof jsQR !== "undefined") {
-            const minSide = Math.min(vw, vh);
-            const cropSize = Math.floor(minSide * 0.75);
-            const sx = Math.floor((vw - cropSize) / 2);
-            const sy = Math.floor((vh - cropSize) / 2);
-
-            canvas.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, WORK_SIZE, WORK_SIZE);
-            
-            const imageData = canvas.getImageData(0, 0, WORK_SIZE, WORK_SIZE);
-            const data = imageData.data;
-
-            for (let i = 0; i < data.length; i += 4) {
-              let avg = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
-              let val = avg < 110 ? 0 : (avg > 145 ? 255 : avg);
-              data[i] = val;     
-              data[i + 1] = val; 
-              data[i + 2] = val; 
-            }
-
-            let code = jsQR(data, WORK_SIZE, WORK_SIZE, {
-              inversionAttempts: "attemptBoth"
-            });
-
-            if (code && code.data) {
-              handleQrDetected(code.data);
-              return;
-            }
-          }
-        }
-      }
-
-      if (scanning) {
-        requestAnimationFrame(processScan);
-      }
-    }
-
-    function handleQrDetected(qrText) {
-      qrText = qrText.trim();
+    if (targetRow && selectedItem) {
+      targetRow.classList.add("highlighted-row");
+      document.getElementById("focusInfo").textContent = 
+        `Menampilkan posisi: ${selectedItem.nama} (No. ${selectedItem.no} / DPT Final ${selectedItem.dptFinal})`;
       
-      if (usedQrCodes.has(qrText) && !unlimitedQrCodes.includes(qrText)) {
-        alert("❌ QR Code (" + qrText + ") SUDAH DIGUNAKAN UNTUK MEMILIH!");
-        return;
-      }
-
-      if (singleUseQrCodes.includes(qrText) || unlimitedQrCodes.includes(qrText)) {
-        currentActiveUser = qrText;
-        stopCamera();
-        document.getElementById("screen-scan").classList.add("hidden");
-        document.getElementById("main-header").style.display = "block";
-        document.getElementById("screen-vote").classList.add("active");
-      } else {
-        alert("❌ QR Code Tidak Terdaftar! (" + qrText + ")");
-      }
-    }
-
-    function toggleSelect(id) {
-      const cards = document.querySelectorAll('#screen-vote .candidate-card');
-      const card = cards[id - 1];
-
-      if (selectedCandidates.has(id)) {
-        selectedCandidates.delete(id);
-        card.classList.remove('selected');
-      } else {
-        selectedCandidates.add(id);
-        card.classList.add('selected');
-      }
-
-      const handPointer = document.getElementById("hand-pointer");
-      if (selectedCandidates.size > 0) {
-        handPointer.style.display = "block";
-      } else {
-        handPointer.style.display = "none";
-      }
-    }
-
-    function goToConfirm() {
-      if (selectedCandidates.size === 0) {
-        alert("Pilih setidaknya 1 kandidat terlebih dahulu!");
-        return;
-      }
-      
-      document.getElementById("hand-pointer").style.display = "none";
-
-      const container = document.getElementById("confirm-container");
-      container.innerHTML = "";
-      
-      Array.from(selectedCandidates).sort().forEach(id => {
-        container.innerHTML += `
-          <div class="candidate-card selected">
-            <div class="candidate-img-wrapper">
-              <img src="${candidatesData[id].img}">
-            </div>
-          </div>`;
-      });
-
-      document.getElementById("main-header").style.display = "none";
-      document.getElementById("screen-vote").classList.remove("active");
-      document.getElementById("screen-confirm").classList.add("active");
-    }
-
-    function resetAndBack() {
-      selectedCandidates.clear();
-      document.querySelectorAll('#screen-vote .candidate-card').forEach(c => c.classList.remove('selected'));
-      document.getElementById("hand-pointer").style.display = "none";
-      
-      document.getElementById("main-header").style.display = "block";
-      document.getElementById("screen-confirm").classList.remove("active");
-      document.getElementById("screen-vote").classList.add("active");
-    }
-
-    function finishVote() {
-      if (currentActiveUser && !unlimitedQrCodes.includes(currentActiveUser)) {
-        usedQrCodes.add(currentActiveUser);
-      }
-
-      document.getElementById("screen-confirm").classList.remove("active");
-      document.getElementById("main-header").style.display = "block";
-      document.getElementById("screen-vote").classList.add("active");
-      if (selectedCandidates.size > 0) {
-        document.getElementById("hand-pointer").style.display = "block";
-      }
-
-      const toastOverlay = document.getElementById("custom-toast-overlay");
-      const toastContent = document.getElementById("toast-content");
-      toastContent.innerHTML = `Menyimpan suara...`;
-      toastOverlay.style.display = "flex";
-
+      // Scroll otomatis menempatkan baris tepat di tengah layar
       setTimeout(() => {
-        toastContent.innerHTML = `
-          <div class="success-check-circle">
-            <svg viewBox="0 0 24 24">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </div>
-          <div class="toast-title">Terima Kasih</div>
-          <div class="toast-subtitle">Suara berhasil disimpan</div>
-        `;
-
-        setTimeout(() => {
-          toastOverlay.style.display = "none";
-          resetToScan();
-        }, 2000);
-
-      }, 2000);
+        targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
     }
+  }
 
-    function resetToScan() {
-      selectedCandidates.clear();
-      currentActiveUser = "";
-      document.querySelectorAll('.candidate-card').forEach(c => c.classList.remove('selected'));
-      document.getElementById("hand-pointer").style.display = "none";
-      
-      document.getElementById("main-header").style.display = "none";
-      document.getElementById("screen-vote").classList.remove("active");
-      document.getElementById("screen-scan").classList.remove("hidden");
-      
-      startCamera();
-    }
-
-    window.onload = startCamera;
-  </script>
+  // Kembali ke Halaman 1 tanpa menghilangkan hasil pencarian sebelumnya
+  function backToSearch() {
+    document.getElementById("page-full").classList.add("hidden");
+    document.getElementById("page-search").classList.remove("hidden");
+  }
+</script>
 </body>
 </html>
