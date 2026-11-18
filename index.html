@@ -37,9 +37,13 @@
     thead th { background: #92d050; color: #000; font-weight: bold; text-align: center; position: sticky; top: 0; z-index: 10; }
     th.bg-yellow { background: #ffff00 !important; }
     
-    /* Lebar Kolom Diatur Kompak & Kolom Nama Menyesuaikan */
-    td.col-nama { 
-      max-width: 160px; 
+    /* Pengaturan Lebar Kolom Khusus */
+    th.col-digit, td.col-digit { width: 55px; min-width: 55px; max-width: 55px; text-align: center; }
+    
+    th.col-nama-header, td.col-nama { 
+      width: 180px; 
+      min-width: 180px; 
+      max-width: 180px; 
       overflow: hidden; 
       text-overflow: ellipsis; 
       white-space: nowrap; 
@@ -95,11 +99,11 @@
         <table>
           <thead>
             <tr>
-              <th>NO DPT AWAL</th>
-              <th>NO DPT FINAL</th>
-              <th>NO TPS</th>
+              <th class="col-digit">NO DPT AWAL</th>
+              <th class="col-digit">NO DPT FINAL</th>
+              <th class="col-digit">NO TPS</th>
               <th>NIK</th>
-              <th>NAMA LENGKAP</th>
+              <th class="col-nama-header">NAMA LENGKAP</th>
               <th>NAMA ALIAS</th>
               <th>KADER</th>
               <th class="bg-yellow">KODE</th>
@@ -134,11 +138,11 @@
         <table>
           <thead>
             <tr>
-              <th>NO DPT AWAL</th>
-              <th>NO DPT FINAL</th>
-              <th>NO TPS</th>
+              <th class="col-digit">NO DPT AWAL</th>
+              <th class="col-digit">NO DPT FINAL</th>
+              <th class="col-digit">NO TPS</th>
               <th>NIK</th>
-              <th>NAMA LENGKAP</th>
+              <th class="col-nama-header">NAMA LENGKAP</th>
               <th>NAMA ALIAS</th>
               <th>KADER</th>
               <th class="bg-yellow">KODE</th>
@@ -247,7 +251,6 @@
         allData.push(record);
       }
 
-      // Isi opsi dropdown secara otomatis dari data unik
       populateSelect("filterAlamat", Array.from(alamatSet).sort());
       populateSelect("filterRt", Array.from(rtSet).sort((a,b)=>a-b), "RT ");
       populateSelect("filterRw", Array.from(rwSet).sort((a,b)=>a-b), "RW ");
@@ -276,9 +279,9 @@
   function createRowHtml(item, withId = false) {
     return `
       <tr ${withId ? `id="row-${item.uid}"` : `onclick="openFullView(${item.uid})"`}>
-        <td class="col-dpt-awal">${item.dptAwal}</td>
-        <td class="col-dpt-final">${item.dptFinal}</td>
-        <td class="center">${item.noTps}</td>
+        <td class="col-digit col-dpt-awal">${item.dptAwal}</td>
+        <td class="col-digit col-dpt-final">${item.dptFinal}</td>
+        <td class="col-digit center">${item.noTps}</td>
         <td class="center">${item.nik}</td>
         <td class="bold col-nama" title="${item.nama}">${item.nama}</td>
         <td>${item.alias}</td>
@@ -297,7 +300,6 @@
     `;
   }
 
-  // Fungsi Filter Gabungan (Teks + Dropdown)
   function applyFilters() {
     const query = document.getElementById("searchInput").value.trim().toLowerCase();
     const fAlamat = document.getElementById("filterAlamat").value;
@@ -317,9 +319,7 @@
     const keywords = query ? query.split(/\s+/) : [];
 
     const matches = allData.filter(item => {
-      // Cocokkan teks pencarian fleksibel
       const matchText = keywords.every(kw => item.searchIndex.includes(kw));
-      // Cocokkan dropdown
       const matchAlamat = !fAlamat || item.alamat === fAlamat;
       const matchRt = !fRt || item.rt === fRt;
       const matchRw = !fRw || item.rw === fRw;
