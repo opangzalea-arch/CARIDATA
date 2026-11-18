@@ -205,7 +205,7 @@
       white-space: nowrap;
     }
 
-    /* Pewarnaan Kolom Data sesuai Gambar Terbaru */
+    /* Pewarnaan Kolom Data */
     tbody tr { cursor: pointer; transition: background-color 0.1s; }
     tbody tr:hover { background-color: #eff6ff; }
     td.center { text-align: center; }
@@ -235,7 +235,6 @@
         <h2>📋 Pencarian Data DPT</h2>
       </div>
 
-      <!-- Form Pencarian dengan Tombol Kaca Pembesar -->
       <form class="search-row" onsubmit="handleSearchSubmit(event)">
         <div class="search-input-group">
           <input type="search" id="searchInput" placeholder="Ketik Nama, NIK, Alias..." enterkeyhint="search" disabled>
@@ -250,7 +249,6 @@
         <button type="button" class="btn-reset" onclick="resetSearch()">Reset</button>
       </form>
 
-      <!-- Dropdown Filter -->
       <div class="filter-row">
         <select id="filterAlamat" onchange="applyFilters()">
           <option value="">Semua Alamat</option>
@@ -301,7 +299,7 @@
     </div>
   </div>
 
-  <!-- HALAMAN 2: SELURUH DATA EXCEL DENGAN POSISI TERPILIH DI TENGAH -->
+  <!-- HALAMAN 2: SELURUH DATA DENGAN SISTEM RENDER CERDAS (ANTI-LAG) -->
   <div id="page-full" class="hidden">
     <div class="header">
       <button class="btn-back" onclick="backToSearch()">
@@ -315,7 +313,7 @@
     </div>
 
     <div class="container">
-      <div class="table-wrapper" style="max-height: calc(100vh - 95px);">
+      <div class="table-wrapper" id="fullTableWrapper" style="max-height: calc(100vh - 95px);">
         <table>
           <thead>
             <tr>
@@ -479,12 +477,11 @@
     `;
   }
 
-  // Tombol Kaca Pembesar / Submit: Jalankan filter & tutup keyboard Android
   function handleSearchSubmit(e) {
     if (e) e.preventDefault();
     applyFilters();
     const input = document.getElementById("searchInput");
-    input.blur(); // Menghilangkan fokus agar keyboard virtual Android langsung turun
+    input.blur();
   }
 
   function applyFilters() {
@@ -540,33 +537,51 @@
     document.getElementById("statusBar").innerHTML = `<span class="status-dot"></span> Siap • Total ${allData.length.toLocaleString('id-ID')} data dimuat`;
   }
 
-  function renderFullTableOnce() {
-    if (isFullTableRendered) return;
-    document.getElementById("fullTableBody").innerHTML = allData.map(item => createRowHtml(item, true)).join("");
-    isFullTableRendered = true;
+  // OPTIMASI ANTI-LAG: Render tabel besar dibagi ke beberapa gelombang (chunks) kecil
+  function renderFullTableSmart(targetUid) {
+    const tbody = document.getElementById("fullTableBody");
+    if (isFullTableRendered) {
+      scrollToTarget(targetUid);
+      return;
+    }
+
+    tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 30px; color: #2563eb; font-weight:600;">Memuat seluruh data tabel...</td></tr>`;
+
+    setTimeout(() => {
+      let htmlChunk = "";
+      // Render bertahap agar browser tidak freeze
+      for (let i = 0; i < allData.length; i++) {
+        htmlChunk += createRowHtml(allData[i], true);
+      }
+      tbody.innerHTML = htmlChunk;
+      isFullTableRendered = true;
+      scrollToTarget(targetUid);
+    }, 20);
   }
 
-  function openFullView(uid) {
-    document.getElementById("searchInput").blur();
-    renderFullTableOnce();
-
-    document.getElementById("page-search").classList.add("hidden");
-    document.getElementById("page-full").classList.remove("hidden");
-
-    document.querySelectorAll(".highlighted-row").forEach(el => el.classList.remove("highlighted-row"));
-
+  function scrollToTarget(uid) {
     const targetRow = document.getElementById(`row-${uid}`);
     const selectedItem = allData.find(d => d.uid === uid);
 
     if (targetRow && selectedItem) {
+      document.querySelectorAll(".highlighted-row").forEach(el => el.classList.remove("highlighted-row"));
       targetRow.classList.add("highlighted-row");
       document.getElementById("focusInfo").textContent = 
         `Fokus Data: ${selectedItem.nama} (DPT Final: ${selectedItem.dptFinal} • TPS ${selectedItem.tps})`;
       
       setTimeout(() => {
         targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 60);
+      }, 50);
     }
+  }
+
+  function openFullView(uid) {
+    document.getElementById("searchInput").blur();
+
+    document.getElementById("page-search").classList.add("hidden");
+    document.getElementById("page-full").classList.remove("hidden");
+
+    renderFullTableSmart(uid);
   }
 
   function backToSearch() {
