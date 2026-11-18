@@ -9,27 +9,41 @@
     * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
     body { margin: 0; background: #f8fafc; color: #0f172a; }
     
-    /* Header & Kotak Pencarian */
-    .header { position: sticky; top: 0; background: #0f172a; color: white; padding: 12px 16px; z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
-    .header h2 { margin: 0 0 8px 0; font-size: 16px; }
-    .search-box { display: flex; gap: 8px; }
-    input[type="text"] { flex: 1; padding: 10px 12px; border: none; border-radius: 6px; font-size: 14px; outline: none; }
-    .btn { padding: 10px 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; }
-    .btn-clear { background: #475569; color: white; }
-    .btn-back { background: #2563eb; color: white; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-    .status-bar { font-size: 12px; color: #cbd5e1; margin-top: 6px; }
-
-    /* Kontainer & Tabel */
-    .container { padding: 10px; }
-    .hidden { display: none !important; }
-    .table-wrapper { background: white; border: 1px solid #94a3b8; overflow-x: auto; max-height: calc(100vh - 115px); }
+    /* Header & Filter Panel */
+    .header { position: sticky; top: 0; background: #0f172a; color: white; padding: 10px 14px; z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+    .header h2 { margin: 0 0 6px 0; font-size: 15px; }
     
-    table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
-    th, td { border: 1px solid #94a3b8; padding: 6px 8px; }
+    .search-row { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+    input[type="text"] { flex: 1; min-width: 180px; padding: 8px 10px; border: none; border-radius: 5px; font-size: 13px; outline: none; }
+    
+    /* Dropdown Filter */
+    .filter-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    select { padding: 6px 8px; border-radius: 5px; border: none; font-size: 12px; background: #ffffff; color: #0f172a; outline: none; cursor: pointer; }
+    
+    .btn { padding: 8px 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
+    .btn-clear { background: #475569; color: white; }
+    .btn-back { background: #2563eb; color: white; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 6px; }
+    .status-bar { font-size: 11px; color: #cbd5e1; margin-top: 4px; }
+
+    /* Kontainer & Tabel Rapat */
+    .container { padding: 8px; }
+    .hidden { display: none !important; }
+    .table-wrapper { background: white; border: 1px solid #94a3b8; overflow-x: auto; max-height: calc(100vh - 125px); }
+    
+    table { width: 100%; border-collapse: collapse; font-size: 11px; white-space: nowrap; }
+    th, td { border: 1px solid #94a3b8; padding: 4px 6px; }
     
     /* Header Tabel ala Excel */
     thead th { background: #92d050; color: #000; font-weight: bold; text-align: center; position: sticky; top: 0; z-index: 10; }
     th.bg-yellow { background: #ffff00 !important; }
+    
+    /* Lebar Kolom Diatur Kompak & Kolom Nama Menyesuaikan */
+    td.col-nama { 
+      max-width: 160px; 
+      overflow: hidden; 
+      text-overflow: ellipsis; 
+      white-space: nowrap; 
+    }
     
     /* Baris Data & Warna Kolom */
     tbody tr { cursor: pointer; }
@@ -46,14 +60,33 @@
 </head>
 <body>
 
-  <!-- HALAMAN 1: PENCARIAN & HASIL SEMENTARA -->
+  <!-- HALAMAN 1: PENCARIAN & FILTER DROPDOWN -->
   <div id="page-search">
     <div class="header">
       <h2>Pencarian Data DPT</h2>
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Ketik Nama, NIK, RT 2, RW 4, Dusun, dll..." disabled>
-        <button class="btn btn-clear" onclick="resetSearch()">Reset</button>
+      
+      <!-- Kolom Ketik Bebas & Tombol Reset -->
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="Ketik Nama, NIK, dll..." disabled>
+        <button class="btn btn-clear" onclick="resetSearch()">Reset Filter</button>
       </div>
+
+      <!-- Pilihan Dropdown untuk Mengerucutkan Pencarian -->
+      <div class="filter-row">
+        <select id="filterAlamat" onchange="applyFilters()">
+          <option value="">-- Semua Alamat / Dusun --</option>
+        </select>
+        <select id="filterRt" onchange="applyFilters()">
+          <option value="">-- RT --</option>
+        </select>
+        <select id="filterRw" onchange="applyFilters()">
+          <option value="">-- RW --</option>
+        </select>
+        <select id="filterTps" onchange="applyFilters()">
+          <option value="">-- TPS --</option>
+        </select>
+      </div>
+
       <div class="status-bar" id="statusBar">Memuat data dari Google Sheets...</div>
     </div>
 
@@ -82,7 +115,7 @@
             </tr>
           </thead>
           <tbody id="searchResultsBody">
-            <tr><td colspan="17" class="center" style="padding: 20px; color: #64748b;">Silakan ketik kata kunci pencarian di atas...</td></tr>
+            <tr><td colspan="17" class="center" style="padding: 15px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>
           </tbody>
         </table>
       </div>
@@ -93,11 +126,11 @@
   <div id="page-full" class="hidden">
     <div class="header">
       <button class="btn btn-back" onclick="backToSearch()">← Kembali ke Hasil Pencarian</button>
-      <div id="focusInfo" style="font-size: 12px; color: #fde047;"></div>
+      <div id="focusInfo" style="font-size: 11px; color: #fde047;"></div>
     </div>
 
     <div class="container">
-      <div class="table-wrapper" style="max-height: calc(100vh - 95px);">
+      <div class="table-wrapper" style="max-height: calc(100vh - 85px);">
         <table>
           <thead>
             <tr>
@@ -133,7 +166,6 @@
   let allData = [];
   let isFullTableRendered = false;
 
-  // Unduh dan parse file CSV menggunakan PapaParse
   Papa.parse(CSV_URL, {
     download: true,
     skipEmptyLines: true,
@@ -144,7 +176,6 @@
         return;
       }
 
-      // Deteksi otomatis posisi kolom berdasarkan baris header pertama
       const header = rows[0].map(c => (c || "").trim().toUpperCase());
       const findCol = (name) => header.indexOf(name);
 
@@ -166,7 +197,11 @@
       const idxTps = header.lastIndexOf("TPS");
       const idxKet = findCol("KET");
 
-      // Loop data mulai dari baris ke-1 (setelah header)
+      let alamatSet = new Set();
+      let rtSet = new Set();
+      let rwSet = new Set();
+      let tpsSet = new Set();
+
       for (let i = 1; i < rows.length; i++) {
         const r = rows[i];
         const namaVal = idxNama > -1 ? (r[idxNama] || "") : "";
@@ -195,7 +230,11 @@
           searchIndex: ""
         };
 
-        // Indeks pencarian fleksibel untuk mendeteksi berbagai kata kunci
+        if (record.alamat) alamatSet.add(record.alamat);
+        if (record.rt) rtSet.add(record.rt);
+        if (record.rw) rwSet.add(record.rw);
+        if (record.tps) tpsSet.add(record.tps);
+
         record.searchIndex = [
           record.dptAwal, record.dptFinal, record.noTps,
           record.nik, record.nama, record.alias, record.kader, record.kode,
@@ -208,6 +247,12 @@
         allData.push(record);
       }
 
+      // Isi opsi dropdown secara otomatis dari data unik
+      populateSelect("filterAlamat", Array.from(alamatSet).sort());
+      populateSelect("filterRt", Array.from(rtSet).sort((a,b)=>a-b), "RT ");
+      populateSelect("filterRw", Array.from(rwSet).sort((a,b)=>a-b), "RW ");
+      populateSelect("filterTps", Array.from(tpsSet).sort((a,b)=>a-b), "TPS ");
+
       const input = document.getElementById("searchInput");
       input.disabled = false;
       document.getElementById("statusBar").textContent = `Siap. Total ${allData.length.toLocaleString('id-ID')} data dimuat.`;
@@ -218,6 +263,16 @@
     }
   });
 
+  function populateSelect(elementId, arr, prefix = "") {
+    const sel = document.getElementById(elementId);
+    arr.forEach(val => {
+      const opt = document.createElement("option");
+      opt.value = val;
+      opt.textContent = prefix + val;
+      sel.appendChild(opt);
+    });
+  }
+
   function createRowHtml(item, withId = false) {
     return `
       <tr ${withId ? `id="row-${item.uid}"` : `onclick="openFullView(${item.uid})"`}>
@@ -225,7 +280,7 @@
         <td class="col-dpt-final">${item.dptFinal}</td>
         <td class="center">${item.noTps}</td>
         <td class="center">${item.nik}</td>
-        <td class="bold">${item.nama}</td>
+        <td class="bold col-nama" title="${item.nama}">${item.nama}</td>
         <td>${item.alias}</td>
         <td>${item.kader}</td>
         <td class="center bold">${item.kode}</td>
@@ -242,39 +297,59 @@
     `;
   }
 
-  // Fungsi pencarian real-time dengan pemisahan spasi (multi-kunci fleksibel)
-  document.getElementById("searchInput").addEventListener("input", function(e) {
-    const query = e.target.value.trim().toLowerCase();
+  // Fungsi Filter Gabungan (Teks + Dropdown)
+  function applyFilters() {
+    const query = document.getElementById("searchInput").value.trim().toLowerCase();
+    const fAlamat = document.getElementById("filterAlamat").value;
+    const fRt = document.getElementById("filterRt").value;
+    const fRw = document.getElementById("filterRw").value;
+    const fTps = document.getElementById("filterTps").value;
+
     const tbody = document.getElementById("searchResultsBody");
     const statusBar = document.getElementById("statusBar");
 
-    if (!query) {
-      tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 20px; color: #64748b;">Silakan ketik kata kunci pencarian di atas...</td></tr>`;
+    if (!query && !fAlamat && !fRt && !fRw && !fTps) {
+      tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 15px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>`;
       statusBar.textContent = `Siap. Total ${allData.length.toLocaleString('id-ID')} data dimuat.`;
       return;
     }
 
-    const keywords = query.split(/\s+/);
-    const matches = allData.filter(item =>
-      keywords.every(kw => item.searchIndex.includes(kw))
-    );
+    const keywords = query ? query.split(/\s+/) : [];
+
+    const matches = allData.filter(item => {
+      // Cocokkan teks pencarian fleksibel
+      const matchText = keywords.every(kw => item.searchIndex.includes(kw));
+      // Cocokkan dropdown
+      const matchAlamat = !fAlamat || item.alamat === fAlamat;
+      const matchRt = !fRt || item.rt === fRt;
+      const matchRw = !fRw || item.rw === fRw;
+      const matchTps = !fTps || item.tps === fTps;
+
+      return matchText && matchAlamat && matchRt && matchRw && matchTps;
+    });
 
     statusBar.textContent = `Ditemukan ${matches.length} data relevan` + (matches.length > 150 ? " (menampilkan 150 teratas)" : "") + " — Klik salah satu baris untuk melihat posisi di seluruh data.";
 
     if (matches.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 20px; color: #ef4444;">Data tidak ditemukan.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 15px; color: #ef4444;">Data tidak ditemukan sesuai filter.</td></tr>`;
       return;
     }
 
     tbody.innerHTML = matches.slice(0, 150).map(item => createRowHtml(item, false)).join("");
-  });
+  }
+
+  document.getElementById("searchInput").addEventListener("input", applyFilters);
 
   function resetSearch() {
-    const input = document.getElementById("searchInput");
-    input.value = "";
-    document.getElementById("searchResultsBody").innerHTML = `<tr><td colspan="17" class="center" style="padding: 20px; color: #64748b;">Silakan ketik kata kunci pencarian di atas...</td></tr>`;
+    document.getElementById("searchInput").value = "";
+    document.getElementById("filterAlamat").value = "";
+    document.getElementById("filterRt").value = "";
+    document.getElementById("filterRw").value = "";
+    document.getElementById("filterTps").value = "";
+    
+    document.getElementById("searchResultsBody").innerHTML = `<tr><td colspan="17" class="center" style="padding: 15px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>`;
     document.getElementById("statusBar").textContent = `Siap. Total ${allData.length.toLocaleString('id-ID')} data dimuat.`;
-    input.focus();
+    document.getElementById("searchInput").focus();
   }
 
   function renderFullTableOnce() {
@@ -283,7 +358,6 @@
     isFullTableRendered = true;
   }
 
-  // Fungsi saat baris diklik: Buka halaman penuh & gulir tepat ke baris tersebut di tengah layar
   function openFullView(uid) {
     renderFullTableOnce();
 
