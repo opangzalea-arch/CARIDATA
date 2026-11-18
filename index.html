@@ -56,7 +56,7 @@
     td.bold { font-weight: bold; }
     td.col-dpt-awal { background: #fde9d9; text-align: center; }
     td.col-dpt-final { background: #ffff99; text-align: center; }
-    td.col-tps { background: #ffff00; text-align: center; font-weight: bold; }
+    td.col-tps { background: #00b0f0; color: white; text-align: center; font-weight: bold; }
 
     /* Sorotan Baris Saat Diklik */
     tr.highlighted-row td { background-color: #fde047 !important; border-top: 2px solid #dc2626; border-bottom: 2px solid #dc2626; font-weight: bold; }
@@ -69,13 +69,11 @@
     <div class="header">
       <h2>Pencarian Data DPT</h2>
       
-      <!-- Kolom Ketik Bebas & Tombol Reset -->
       <div class="search-row">
         <input type="text" id="searchInput" placeholder="Ketik Nama, NIK, dll..." disabled>
         <button class="btn btn-clear" onclick="resetSearch()">Reset Filter</button>
       </div>
 
-      <!-- Pilihan Dropdown untuk Mengerucutkan Pencarian -->
       <div class="filter-row">
         <select id="filterAlamat" onchange="applyFilters()">
           <option value="">-- Semua Alamat / Dusun --</option>
@@ -104,9 +102,10 @@
               <th class="col-digit">NO TPS</th>
               <th>NIK</th>
               <th class="col-nama-header">NAMA LENGKAP</th>
+              <th class="bg-yellow" style="background: #00b0f0 !important; color: white;">TPS</th>
               <th>NAMA ALIAS</th>
               <th>KADER</th>
-              <th class="bg-yellow">KODE</th>
+              <th>KODE</th>
               <th>TEMPAT LAHIR</th>
               <th>TANGGAL LAHIR</th>
               <th>JK</th>
@@ -114,7 +113,6 @@
               <th>ALAMAT</th>
               <th>RT</th>
               <th>RW</th>
-              <th class="bg-yellow">TPS</th>
               <th>KET</th>
             </tr>
           </thead>
@@ -143,9 +141,10 @@
               <th class="col-digit">NO TPS</th>
               <th>NIK</th>
               <th class="col-nama-header">NAMA LENGKAP</th>
+              <th class="bg-yellow" style="background: #00b0f0 !important; color: white;">TPS</th>
               <th>NAMA ALIAS</th>
               <th>KADER</th>
-              <th class="bg-yellow">KODE</th>
+              <th>KODE</th>
               <th>TEMPAT LAHIR</th>
               <th>TANGGAL LAHIR</th>
               <th>JK</th>
@@ -153,7 +152,6 @@
               <th>ALAMAT</th>
               <th>RT</th>
               <th>RW</th>
-              <th class="bg-yellow">TPS</th>
               <th>KET</th>
             </tr>
           </thead>
@@ -164,7 +162,6 @@
   </div>
 
 <script>
-  // GANTI URL DI BAWAH INI DENGAN LINK CSV PUBLIK GOOGLE SHEETS ANDA
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTvjBzHOvvGXtiO2WqzpK8EacTQ0uenF5lfHfrekELgk0LXYyTUzeWAyftX18ZwsgefThcLw4yDqM4-/pub?gid=0&single=true&output=csv";
 
   let allData = [];
@@ -188,6 +185,7 @@
       const idxNoTps = findCol("NO TPS");
       const idxNik = findCol("NIK");
       const idxNama = findCol("NAMA LENGKAP");
+      const idxTps = findCol("TPS");
       const idxAlias = findCol("NAMA ALIAS");
       const idxKader = findCol("KADER");
       const idxKode = findCol("KODE");
@@ -198,7 +196,6 @@
       const idxAlamat = findCol("ALAMAT");
       const idxRt = findCol("RT");
       const idxRw = findCol("RW");
-      const idxTps = header.lastIndexOf("TPS");
       const idxKet = findCol("KET");
 
       let alamatSet = new Set();
@@ -219,6 +216,7 @@
           noTps: idxNoTps > -1 ? (r[idxNoTps] || "") : "",
           nik: nikVal,
           nama: namaVal,
+          tps: idxTps > -1 ? (r[idxTps] || "") : "",
           alias: idxAlias > -1 ? (r[idxAlias] || "") : "",
           kader: idxKader > -1 ? (r[idxKader] || "") : "",
           kode: idxKode > -1 ? (r[idxKode] || "") : "",
@@ -229,7 +227,6 @@
           alamat: idxAlamat > -1 ? (r[idxAlamat] || "") : "",
           rt: idxRt > -1 ? (r[idxRt] || "") : "",
           rw: idxRw > -1 ? (r[idxRw] || "") : "",
-          tps: idxTps > -1 ? (r[idxTps] || "") : "",
           ket: idxKet > -1 ? (r[idxKet] || "") : "",
           searchIndex: ""
         };
@@ -241,7 +238,7 @@
 
         record.searchIndex = [
           record.dptAwal, record.dptFinal, record.noTps,
-          record.nik, record.nama, record.alias, record.kader, record.kode,
+          record.nik, record.nama, record.tps, record.alias, record.kader, record.kode,
           record.tmpLahir, record.alamat, record.status, record.ket,
           `rt${record.rt}`, `rt ${record.rt}`,
           `rw${record.rw}`, `rw ${record.rw}`,
@@ -284,6 +281,7 @@
         <td class="col-digit center">${item.noTps}</td>
         <td class="center">${item.nik}</td>
         <td class="bold col-nama" title="${item.nama}">${item.nama}</td>
+        <td class="col-tps">${item.tps}</td>
         <td>${item.alias}</td>
         <td>${item.kader}</td>
         <td class="center bold">${item.kode}</td>
@@ -294,7 +292,6 @@
         <td>${item.alamat}</td>
         <td class="center">${item.rt}</td>
         <td class="center">${item.rw}</td>
-        <td class="col-tps">${item.tps}</td>
         <td class="center">${item.ket}</td>
       </tr>
     `;
