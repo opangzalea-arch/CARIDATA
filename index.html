@@ -3,90 +3,121 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pencarian Data DPT</title>
+  <title>Pencarian Data DPT Desa</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { margin: 0; background: #f1f5f9; color: #1e293b; }
+    * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
+    body { margin: 0; background: #f8fafc; color: #0f172a; }
     
-    /* Header & Search */
-    .header { position: sticky; top: 0; background: #0f172a; color: white; padding: 14px 16px; z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-    .header h2 { margin: 0 0 10px 0; font-size: 18px; }
+    /* Header & Kotak Pencarian */
+    .header { position: sticky; top: 0; background: #0f172a; color: white; padding: 12px 16px; z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+    .header h2 { margin: 0 0 8px 0; font-size: 16px; }
     .search-box { display: flex; gap: 8px; }
-    input[type="text"] { flex: 1; padding: 10px 14px; border: none; border-radius: 8px; font-size: 15px; outline: none; }
-    .btn { padding: 10px 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
+    input[type="text"] { flex: 1; padding: 10px 12px; border: none; border-radius: 6px; font-size: 14px; outline: none; }
+    .btn { padding: 10px 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; }
     .btn-clear { background: #475569; color: white; }
-    .btn-back { background: #2563eb; color: white; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; }
-    .status-bar { font-size: 13px; color: #94a3b8; margin-top: 8px; }
+    .btn-back { background: #2563eb; color: white; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .status-bar { font-size: 12px; color: #cbd5e1; margin-top: 6px; }
 
-    /* Container */
-    .container { max-width: 900px; margin: 0 auto; padding: 12px; }
+    /* Kontainer & Tabel */
+    .container { padding: 10px; }
     .hidden { display: none !important; }
-
-    /* Halaman 1: Hasil Pencarian (Card List) */
-    .result-card { background: white; padding: 14px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer; border-left: 5px solid #2563eb; transition: transform 0.1s; }
-    .result-card:active { transform: scale(0.99); background: #eff6ff; }
-    .card-top { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #2563eb; margin-bottom: 4px; }
-    .card-name { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
-    .card-meta { font-size: 13px; color: #475569; line-height: 1.4; }
-    .badge { display: inline-block; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; color: #334155; }
-
-    /* Halaman 2: Seluruh Data (Tabel) */
-    .table-wrapper { background: white; border-radius: 8px; overflow-x: auto; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
-    th { background: #1e293b; color: white; padding: 10px 8px; text-align: left; position: sticky; top: 0; }
-    td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; }
+    .table-wrapper { background: white; border: 1px solid #94a3b8; overflow-x: auto; max-height: calc(100vh - 115px); }
     
-    /* Sorotan Baris Terpilih */
-    tr.highlighted-row { background-color: #fef08a !important; outline: 2px solid #eab308; font-weight: 600; }
-    tr.highlighted-row td { color: #0f172a; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+    th, td { border: 1px solid #94a3b8; padding: 6px 8px; }
+    
+    /* Header Tabel ala Excel */
+    thead th { background: #92d050; color: #000; font-weight: bold; text-align: center; position: sticky; top: 0; z-index: 10; }
+    th.bg-yellow { background: #ffff00 !important; }
+    
+    /* Baris Data & Warna Kolom */
+    tbody tr { cursor: pointer; }
+    tbody tr:hover { background-color: #e0f2fe; }
+    td.center { text-align: center; }
+    td.bold { font-weight: bold; }
+    td.col-dpt-awal { background: #fde9d9; text-align: center; }
+    td.col-dpt-final { background: #ffff99; text-align: center; }
+    td.col-tps { background: #ffff00; text-align: center; font-weight: bold; }
+
+    /* Sorotan Baris Saat Diklik */
+    tr.highlighted-row td { background-color: #fde047 !important; border-top: 2px solid #dc2626; border-bottom: 2px solid #dc2626; font-weight: bold; }
   </style>
 </head>
 <body>
 
-  <!-- HALAMAN 1: PENCARIAN FLEKSIBEL -->
+  <!-- HALAMAN 1: PENCARIAN & HASIL SEMENTARA -->
   <div id="page-search">
     <div class="header">
       <h2>Pencarian Data DPT</h2>
       <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Ketik Nama, NIK, Alias, atau RT 1 RW 5 TPS 6..." disabled>
+        <input type="text" id="searchInput" placeholder="Ketik Nama, NIK, RT 2, RW 4, Dusun, dll..." disabled>
         <button class="btn btn-clear" onclick="resetSearch()">Reset</button>
       </div>
       <div class="status-bar" id="statusBar">Memuat data dari Google Sheets...</div>
     </div>
 
-    <div class="container" id="resultsList"></div>
-  </div>
-
-  <!-- HALAMAN 2: SELURUH DATA EXCEL -->
-  <div id="page-full" class="hidden">
-    <div class="header">
-      <button class="btn btn-back" onclick="backToSearch()">← Kembali ke Hasil Pencarian</button>
-      <div id="focusInfo" style="font-size: 13px; color: #cbd5e1;"></div>
-    </div>
-
-    <div class="container" style="max-width: 100%;">
+    <div class="container">
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
-              <th>NO</th>
-              <th>DPT AWAL</th>
-              <th>DPT FINAL</th>
-              <th>DPT TPS</th>
+              <th>NO DPT AWAL</th>
+              <th>NO DPT FINAL</th>
+              <th>NO TPS</th>
               <th>NIK</th>
               <th>NAMA LENGKAP</th>
-              <th>ALIAS</th>
+              <th>NAMA ALIAS</th>
               <th>KADER</th>
-              <th>KOD</th>
+              <th class="bg-yellow">KODE</th>
               <th>TEMPAT LAHIR</th>
-              <th>TGL LAHIR</th>
+              <th>TANGGAL LAHIR</th>
               <th>JK</th>
-              <th>STS</th>
+              <th>STATUS</th>
               <th>ALAMAT</th>
               <th>RT</th>
               <th>RW</th>
-              <th>TPS</th>
+              <th class="bg-yellow">TPS</th>
+              <th>KET</th>
+            </tr>
+          </thead>
+          <tbody id="searchResultsBody">
+            <tr><td colspan="17" class="center" style="padding: 20px; color: #64748b;">Silakan ketik kata kunci pencarian di atas...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- HALAMAN 2: TABEL KESELURUHAN DENGAN FOKUS BARIS TERPILIH -->
+  <div id="page-full" class="hidden">
+    <div class="header">
+      <button class="btn btn-back" onclick="backToSearch()">← Kembali ke Hasil Pencarian</button>
+      <div id="focusInfo" style="font-size: 12px; color: #fde047;"></div>
+    </div>
+
+    <div class="container">
+      <div class="table-wrapper" style="max-height: calc(100vh - 95px);">
+        <table>
+          <thead>
+            <tr>
+              <th>NO DPT AWAL</th>
+              <th>NO DPT FINAL</th>
+              <th>NO TPS</th>
+              <th>NIK</th>
+              <th>NAMA LENGKAP</th>
+              <th>NAMA ALIAS</th>
+              <th>KADER</th>
+              <th class="bg-yellow">KODE</th>
+              <th>TEMPAT LAHIR</th>
+              <th>TANGGAL LAHIR</th>
+              <th>JK</th>
+              <th>STATUS</th>
+              <th>ALAMAT</th>
+              <th>RT</th>
+              <th>RW</th>
+              <th class="bg-yellow">TPS</th>
+              <th>KET</th>
             </tr>
           </thead>
           <tbody id="fullTableBody"></tbody>
@@ -96,51 +127,79 @@
   </div>
 
 <script>
-  // MASUKKAN LINK CSV DARI GOOGLE SHEETS DI SINI
-  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTvjBzHOvvGXtiO2WqzpK8EacTQ0uenF5lfHfrekELgk0LXYyTUzeWAyftX18ZwsgefThcLw4yDqM4-/pub?gid=0&single=true&output=csv";
+  // GANTI URL DI BAWAH INI DENGAN LINK CSV PUBLIK GOOGLE SHEETS ANDA
+  const CSV_URL = "URL_CSV_GOOGLE_SHEETS_ANDA";
 
   let allData = [];
   let isFullTableRendered = false;
 
-  // Muat dan parsing CSV saat halaman dibuka
+  // Unduh dan parse file CSV menggunakan PapaParse
   Papa.parse(CSV_URL, {
     download: true,
     skipEmptyLines: true,
     complete: function(results) {
       const rows = results.data;
-      // Lewati 2 baris header (index 0 dan 1) sesuai struktur gambar Excel
-      for (let i = 2; i < rows.length; i++) {
+      if (rows.length < 2) {
+        document.getElementById("statusBar").textContent = "Data kosong atau format CSV salah.";
+        return;
+      }
+
+      // Deteksi otomatis posisi kolom berdasarkan baris header pertama
+      const header = rows[0].map(c => (c || "").trim().toUpperCase());
+      const findCol = (name) => header.indexOf(name);
+
+      const idxAwal = findCol("NO DPT AWAL");
+      const idxFinal = findCol("NO DPT FINAL");
+      const idxNoTps = findCol("NO TPS");
+      const idxNik = findCol("NIK");
+      const idxNama = findCol("NAMA LENGKAP");
+      const idxAlias = findCol("NAMA ALIAS");
+      const idxKader = findCol("KADER");
+      const idxKode = findCol("KODE");
+      const idxTmpLahir = findCol("TEMPAT LAHIR");
+      const idxTglLahir = findCol("TANGGAL LAHIR");
+      const idxJk = findCol("JK");
+      const idxStatus = findCol("STATUS");
+      const idxAlamat = findCol("ALAMAT");
+      const idxRt = findCol("RT");
+      const idxRw = findCol("RW");
+      const idxTps = header.lastIndexOf("TPS");
+      const idxKet = findCol("KET");
+
+      // Loop data mulai dari baris ke-1 (setelah header)
+      for (let i = 1; i < rows.length; i++) {
         const r = rows[i];
-        // Pastikan baris memiliki Nama Lengkap (kolom G / index 6) atau NIK (index 5)
-        if (!r[6] && !r[5]) continue;
+        const namaVal = idxNama > -1 ? (r[idxNama] || "") : "";
+        const nikVal = idxNik > -1 ? (r[idxNik] || "") : "";
+        if (!namaVal && !nikVal) continue;
 
         const record = {
           uid: i,
-          no: r[0] || "",
-          dptAwal: r[2] || "",
-          dptFinal: r[3] || "",
-          dptTps: r[4] || "",
-          nik: r[5] || "",
-          nama: r[6] || "",
-          alias: r[7] || "",
-          kader: r[8] || "",
-          kod: r[9] || "",
-          tmpLahir: r[10] || "",
-          tglLahir: r[11] || "",
-          jk: r[12] || "",
-          status: r[13] || "",
-          alamat: r[14] || "",
-          rt: r[15] || "",
-          rw: r[16] || "",
-          tps: r[17] || "",
-          // String gabungan untuk pencarian multi-kata fleksibel
+          dptAwal: idxAwal > -1 ? (r[idxAwal] || "") : "",
+          dptFinal: idxFinal > -1 ? (r[idxFinal] || "") : "",
+          noTps: idxNoTps > -1 ? (r[idxNoTps] || "") : "",
+          nik: nikVal,
+          nama: namaVal,
+          alias: idxAlias > -1 ? (r[idxAlias] || "") : "",
+          kader: idxKader > -1 ? (r[idxKader] || "") : "",
+          kode: idxKode > -1 ? (r[idxKode] || "") : "",
+          tmpLahir: idxTmpLahir > -1 ? (r[idxTmpLahir] || "") : "",
+          tglLahir: idxTglLahir > -1 ? (r[idxTglLahir] || "") : "",
+          jk: idxJk > -1 ? (r[idxJk] || "") : "",
+          status: idxStatus > -1 ? (r[idxStatus] || "") : "",
+          alamat: idxAlamat > -1 ? (r[idxAlamat] || "") : "",
+          rt: idxRt > -1 ? (r[idxRt] || "") : "",
+          rw: idxRw > -1 ? (r[idxRw] || "") : "",
+          tps: idxTps > -1 ? (r[idxTps] || "") : "",
+          ket: idxKet > -1 ? (r[idxKet] || "") : "",
           searchIndex: ""
         };
 
+        // Indeks pencarian fleksibel untuk mendeteksi berbagai kata kunci
         record.searchIndex = [
-          record.no, record.dptAwal, record.dptFinal, record.dptTps,
-          record.nik, record.nama, record.alias, record.kader,
-          record.alamat,
+          record.dptAwal, record.dptFinal, record.noTps,
+          record.nik, record.nama, record.alias, record.kader, record.kode,
+          record.tmpLahir, record.alamat, record.status, record.ket,
           `rt${record.rt}`, `rt ${record.rt}`,
           `rw${record.rw}`, `rw ${record.rw}`,
           `tps${record.tps}`, `tps ${record.tps}`
@@ -155,100 +214,82 @@
       input.focus();
     },
     error: function() {
-      document.getElementById("statusBar").textContent = "Gagal memuat data. Pastikan link CSV Google Sheets sudah dipublikasikan.";
+      document.getElementById("statusBar").textContent = "Gagal memuat data. Periksa kembali tautan CSV Google Sheets Anda.";
     }
   });
 
-  // Event ketik pencarian real-time
+  function createRowHtml(item, withId = false) {
+    return `
+      <tr ${withId ? `id="row-${item.uid}"` : `onclick="openFullView(${item.uid})"`}>
+        <td class="col-dpt-awal">${item.dptAwal}</td>
+        <td class="col-dpt-final">${item.dptFinal}</td>
+        <td class="center">${item.noTps}</td>
+        <td class="center">${item.nik}</td>
+        <td class="bold">${item.nama}</td>
+        <td>${item.alias}</td>
+        <td>${item.kader}</td>
+        <td class="center bold">${item.kode}</td>
+        <td class="center">${item.tmpLahir}</td>
+        <td class="center">${item.tglLahir}</td>
+        <td class="center">${item.jk}</td>
+        <td class="center">${item.status}</td>
+        <td>${item.alamat}</td>
+        <td class="center">${item.rt}</td>
+        <td class="center">${item.rw}</td>
+        <td class="col-tps">${item.tps}</td>
+        <td class="center">${item.ket}</td>
+      </tr>
+    `;
+  }
+
+  // Fungsi pencarian real-time dengan pemisahan spasi (multi-kunci fleksibel)
   document.getElementById("searchInput").addEventListener("input", function(e) {
     const query = e.target.value.trim().toLowerCase();
-    const listContainer = document.getElementById("resultsList");
+    const tbody = document.getElementById("searchResultsBody");
     const statusBar = document.getElementById("statusBar");
 
     if (!query) {
-      listContainer.innerHTML = "";
+      tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 20px; color: #64748b;">Silakan ketik kata kunci pencarian di atas...</td></tr>`;
       statusBar.textContent = `Siap. Total ${allData.length.toLocaleString('id-ID')} data dimuat.`;
       return;
     }
 
-    // Pisahkan kata kunci berdasarkan spasi agar bisa mencari kombinasi (misal: "reza rt 3 tps 7")
     const keywords = query.split(/\s+/);
     const matches = allData.filter(item =>
       keywords.every(kw => item.searchIndex.includes(kw))
     );
 
-    statusBar.textContent = `Ditemukan ${matches.length} data relevan` + (matches.length > 100 ? " (menampilkan 100 teratas)" : "");
+    statusBar.textContent = `Ditemukan ${matches.length} data relevan` + (matches.length > 150 ? " (menampilkan 150 teratas)" : "") + " — Klik salah satu baris untuk melihat posisi di seluruh data.";
 
-    // Render maksimal 100 hasil agar tetap ringan di HP
-    const fragment = document.createDocumentFragment();
-    matches.slice(0, 100).forEach(item => {
-      const div = document.createElement("div");
-      div.className = "result-card";
-      div.onclick = () => openFullView(item.uid);
-      div.innerHTML = `
-        <div class="card-top">
-          <span>NO: ${item.no} | DPT FINAL: ${item.dptFinal} | DPT TPS: ${item.dptTps}</span>
-          <span>TPS ${item.tps}</span>
-        </div>
-        <div class="card-name">${item.nama} ${item.alias ? `(${item.alias})` : ""}</div>
-        <div class="card-meta">
-          NIK: ${item.nik} • ${item.jk} (${item.tglLahir})<br>
-          ${item.alamat} — <span class="badge">RT ${item.rt} / RW ${item.rw}</span>
-          ${item.kader ? `<span class="badge" style="background:#fef08a;">Kader: ${item.kader}</span>` : ""}
-        </div>
-      `;
-      fragment.appendChild(div);
-    });
+    if (matches.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 20px; color: #ef4444;">Data tidak ditemukan.</td></tr>`;
+      return;
+    }
 
-    listContainer.innerHTML = "";
-    listContainer.appendChild(fragment);
+    tbody.innerHTML = matches.slice(0, 150).map(item => createRowHtml(item, false)).join("");
   });
 
   function resetSearch() {
     const input = document.getElementById("searchInput");
     input.value = "";
-    document.getElementById("resultsList").innerHTML = "";
+    document.getElementById("searchResultsBody").innerHTML = `<tr><td colspan="17" class="center" style="padding: 20px; color: #64748b;">Silakan ketik kata kunci pencarian di atas...</td></tr>`;
     document.getElementById("statusBar").textContent = `Siap. Total ${allData.length.toLocaleString('id-ID')} data dimuat.`;
     input.focus();
   }
 
-  // Bangun tabel penuh hanya satu kali saat pertama kali dibutuhkan
   function renderFullTableOnce() {
     if (isFullTableRendered) return;
-    const tbody = document.getElementById("fullTableBody");
-    const rowsHtml = allData.map(item => `
-      <tr id="row-${item.uid}">
-        <td>${item.no}</td>
-        <td>${item.dptAwal}</td>
-        <td>${item.dptFinal}</td>
-        <td>${item.dptTps}</td>
-        <td>${item.nik}</td>
-        <td>${item.nama}</td>
-        <td>${item.alias}</td>
-        <td>${item.kader}</td>
-        <td>${item.kod}</td>
-        <td>${item.tmpLahir}</td>
-        <td>${item.tglLahir}</td>
-        <td>${item.jk}</td>
-        <td>${item.status}</td>
-        <td>${item.alamat}</td>
-        <td>${item.rt}</td>
-        <td>${item.rw}</td>
-        <td>${item.tps}</td>
-      </tr>
-    `).join("");
-    tbody.innerHTML = rowsHtml;
+    document.getElementById("fullTableBody").innerHTML = allData.map(item => createRowHtml(item, true)).join("");
     isFullTableRendered = true;
   }
 
-  // Pindah ke Halaman 2 dan langsung scroll ke posisi tengah baris terpilih
+  // Fungsi saat baris diklik: Buka halaman penuh & gulir tepat ke baris tersebut di tengah layar
   function openFullView(uid) {
     renderFullTableOnce();
 
     document.getElementById("page-search").classList.add("hidden");
     document.getElementById("page-full").classList.remove("hidden");
 
-    // Hapus sorotan sebelumnya
     document.querySelectorAll(".highlighted-row").forEach(el => el.classList.remove("highlighted-row"));
 
     const targetRow = document.getElementById(`row-${uid}`);
@@ -257,16 +298,14 @@
     if (targetRow && selectedItem) {
       targetRow.classList.add("highlighted-row");
       document.getElementById("focusInfo").textContent = 
-        `Menampilkan posisi: ${selectedItem.nama} (No. ${selectedItem.no} / DPT Final ${selectedItem.dptFinal})`;
+        `Posisi Terpilih: ${selectedItem.nama} (No. DPT Final: ${selectedItem.dptFinal} | TPS ${selectedItem.tps})`;
       
-      // Scroll otomatis menempatkan baris tepat di tengah layar
       setTimeout(() => {
         targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 50);
     }
   }
 
-  // Kembali ke Halaman 1 tanpa menghilangkan hasil pencarian sebelumnya
   function backToSearch() {
     document.getElementById("page-full").classList.add("hidden");
     document.getElementById("page-search").classList.remove("hidden");
