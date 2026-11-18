@@ -2,101 +2,267 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pencarian Data DPT Desa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Pencarian Data DPT</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <style>
-    * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
-    body { margin: 0; background: #f8fafc; color: #0f172a; }
-    
-    /* Header & Filter Panel */
-    .header { position: sticky; top: 0; background: #0f172a; color: white; padding: 10px 14px; z-index: 100; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
-    .header h2 { margin: 0 0 6px 0; font-size: 15px; }
-    
-    .search-row { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
-    input[type="text"] { flex: 1; min-width: 180px; padding: 8px 10px; border: none; border-radius: 5px; font-size: 13px; outline: none; }
-    
-    /* Dropdown Filter */
-    .filter-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-    select { padding: 6px 8px; border-radius: 5px; border: none; font-size: 12px; background: #ffffff; color: #0f172a; outline: none; cursor: pointer; }
-    
-    .btn { padding: 8px 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 12px; }
-    .btn-clear { background: #475569; color: white; }
-    .btn-back { background: #2563eb; color: white; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 6px; }
-    .status-bar { font-size: 11px; color: #cbd5e1; margin-top: 4px; }
+    :root {
+      --bg-body: #f1f5f9;
+      --header-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      --accent-blue: #2563eb;
+      --accent-blue-hover: #1d4ed8;
+      --border-table: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+    }
 
-    /* Kontainer & Tabel Rapat */
+    * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { margin: 0; background: var(--bg-body); color: var(--text-main); }
+
+    /* Header & Panel Pencarian Elegan */
+    .header {
+      position: sticky;
+      top: 0;
+      background: var(--header-bg);
+      color: white;
+      padding: 12px 14px;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Baris Input + Tombol Kaca Pembesar + Reset */
+    .search-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .search-input-group {
+      flex: 1;
+      display: flex;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .search-input-group input[type="search"] {
+      flex: 1;
+      border: none;
+      padding: 9px 12px;
+      font-size: 13px;
+      color: #0f172a;
+      outline: none;
+      background: transparent;
+    }
+    .btn-search-icon {
+      background: var(--accent-blue);
+      color: white;
+      border: none;
+      padding: 0 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      font-weight: 600;
+      font-size: 12px;
+      transition: background 0.15s;
+    }
+    .btn-search-icon:active { background: var(--accent-blue-hover); }
+
+    .btn-reset {
+      background: rgba(255, 255, 255, 0.14);
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-reset:active { background: rgba(255, 255, 255, 0.25); }
+
+    /* Baris Dropdown Filter */
+    .filter-row {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 6px;
+    }
+    select {
+      width: 100%;
+      padding: 7px 6px;
+      border-radius: 7px;
+      border: 1px solid rgba(255,255,255,0.2);
+      font-size: 12px;
+      background: #f8fafc;
+      color: #0f172a;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .status-bar {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 7px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      display: inline-block;
+    }
+
+    /* Tombol Kembali Halaman 2 */
+    .btn-back {
+      background: var(--accent-blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Kontainer Tabel */
     .container { padding: 8px; }
     .hidden { display: none !important; }
-    .table-wrapper { background: white; border: 1px solid #94a3b8; overflow-x: auto; max-height: calc(100vh - 125px); }
-    
-    table { width: 100%; border-collapse: collapse; font-size: 11px; white-space: nowrap; }
-    th, td { border: 1px solid #94a3b8; padding: 4px 6px; }
-    
-    /* Header Tabel ala Excel & Text Wrapping */
-    thead th { 
-      background: #92d050; 
-      color: #000; 
-      font-weight: bold; 
-      text-align: center; 
-      position: sticky; 
-      top: 0; 
-      z-index: 10; 
-      white-space: normal !important; /* Membuat teks header bisa turun ke bawah (wrapping) */
-      word-break: break-word;
-      vertical-align: middle;
+    .table-wrapper {
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--border-table);
+      overflow: auto;
+      max-height: calc(100vh - 135px);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
     }
-    th.bg-yellow { background: #ffff00 !important; }
-    
-    /* Pengaturan Lebar Kolom Khusus (Sedikit dilebarkan agar teks wrapping muat rapi) */
-    th.col-digit, td.col-digit { width: 70px; min-width: 70px; max-width: 70px; text-align: center; }
-    
-    th.col-nama-header, td.col-nama { 
-      width: 180px; 
-      min-width: 180px; 
-      max-width: 180px; 
-      overflow: hidden; 
-      text-overflow: ellipsis; 
-      white-space: nowrap; 
-    }
-    
-    /* Baris Data & Warna Kolom */
-    tbody tr { cursor: pointer; }
-    tbody tr:hover { background-color: #e0f2fe; }
-    td.center { text-align: center; }
-    td.bold { font-weight: bold; }
-    td.col-dpt-awal { background: #fde9d9; text-align: center; }
-    td.col-dpt-final { background: #ffff99; text-align: center; }
-    td.col-tps { background: #00b0f0; color: white; text-align: center; font-weight: bold; }
 
-    /* Sorotan Baris Saat Diklik */
-    tr.highlighted-row td { background-color: #fde047 !important; border-top: 2px solid #dc2626; border-bottom: 2px solid #dc2626; font-weight: bold; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+      white-space: nowrap;
+    }
+    th, td {
+      border: 1px solid var(--border-table);
+      padding: 5px 6px;
+    }
+
+    /* Header Tabel dengan Wrapping Otomatis */
+    thead th {
+      background: #4ade80;
+      color: #052e16;
+      font-weight: 700;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      white-space: normal !important;
+      word-break: break-word;
+      line-height: 1.2;
+      vertical-align: middle;
+      box-shadow: 0 1px 0 #94a3b8;
+    }
+
+    /* Pengaturan Lebar Kolom */
+    th.col-digit, td.col-digit {
+      width: 64px;
+      min-width: 64px;
+      max-width: 64px;
+      text-align: center;
+    }
+    th.col-nama-header, td.col-nama {
+      width: 175px;
+      min-width: 175px;
+      max-width: 175px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Pewarnaan Kolom Data sesuai Gambar Terbaru */
+    tbody tr { cursor: pointer; transition: background-color 0.1s; }
+    tbody tr:hover { background-color: #eff6ff; }
+    td.center { text-align: center; }
+    td.bold { font-weight: 600; }
+
+    td.col-dpt-awal { background: #ffedd5; text-align: center; font-weight: 500; }
+    td.col-dpt-final { background: #e0f2fe; text-align: center; font-weight: 600; color: #0369a1; }
+    td.col-tps { background: #f1f5f9; text-align: center; font-weight: 700; }
+    td.col-kode { background: #e0f2fe; text-align: center; font-weight: 700; }
+
+    /* Sorotan Baris Terpilih di Halaman 2 */
+    tr.highlighted-row td {
+      background-color: #fef08a !important;
+      color: #0f172a !important;
+      border-top: 2px solid #dc2626;
+      border-bottom: 2px solid #dc2626;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
 
-  <!-- HALAMAN 1: PENCARIAN & FILTER DROPDOWN -->
+  <!-- HALAMAN 1: PENCARIAN & FILTER -->
   <div id="page-search">
     <div class="header">
-      <h2>Pencarian Data DPT</h2>
-      
-      <div class="search-row">
-        <input type="text" id="searchInput" placeholder="Ketik Nama, NIK, dll..." disabled>
-        <button class="btn btn-clear" onclick="resetSearch()">Reset Filter</button>
+      <div class="header-top">
+        <h2>📋 Pencarian Data DPT</h2>
       </div>
 
+      <!-- Form Pencarian dengan Tombol Kaca Pembesar -->
+      <form class="search-row" onsubmit="handleSearchSubmit(event)">
+        <div class="search-input-group">
+          <input type="search" id="searchInput" placeholder="Ketik Nama, NIK, Alias..." enterkeyhint="search" disabled>
+          <button type="submit" class="btn-search-icon" title="Cari & Tutup Keyboard">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>Cari</span>
+          </button>
+        </div>
+        <button type="button" class="btn-reset" onclick="resetSearch()">Reset</button>
+      </form>
+
+      <!-- Dropdown Filter -->
       <div class="filter-row">
         <select id="filterAlamat" onchange="applyFilters()">
-          <option value="">-- Semua Alamat / Dusun --</option>
+          <option value="">Semua Alamat</option>
         </select>
         <select id="filterRt" onchange="applyFilters()">
-          <option value="">-- RT --</option>
+          <option value="">RT</option>
         </select>
         <select id="filterRw" onchange="applyFilters()">
-          <option value="">-- RW --</option>
+          <option value="">RW</option>
         </select>
         <select id="filterTps" onchange="applyFilters()">
-          <option value="">-- TPS --</option>
+          <option value="">TPS</option>
         </select>
       </div>
 
@@ -113,7 +279,7 @@
               <th class="col-digit">NO TPS</th>
               <th>NIK</th>
               <th class="col-nama-header">NAMA LENGKAP</th>
-              <th class="bg-yellow" style="background: #00b0f0 !important; color: white;">TPS</th>
+              <th>TPS</th>
               <th>NAMA ALIAS</th>
               <th>KADER</th>
               <th>KODE</th>
@@ -128,22 +294,28 @@
             </tr>
           </thead>
           <tbody id="searchResultsBody">
-            <tr><td colspan="17" class="center" style="padding: 15px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>
+            <tr><td colspan="17" class="center" style="padding: 24px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- HALAMAN 2: TABEL KESELURUHAN DENGAN FOKUS BARIS TERPILIH -->
+  <!-- HALAMAN 2: SELURUH DATA EXCEL DENGAN POSISI TERPILIH DI TENGAH -->
   <div id="page-full" class="hidden">
     <div class="header">
-      <button class="btn btn-back" onclick="backToSearch()">← Kembali ke Hasil Pencarian</button>
-      <div id="focusInfo" style="font-size: 11px; color: #fde047;"></div>
+      <button class="btn-back" onclick="backToSearch()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Kembali ke Hasil Pencarian
+      </button>
+      <div id="focusInfo" style="font-size: 11.5px; color: #fde047; font-weight: 500;"></div>
     </div>
 
     <div class="container">
-      <div class="table-wrapper" style="max-height: calc(100vh - 85px);">
+      <div class="table-wrapper" style="max-height: calc(100vh - 95px);">
         <table>
           <thead>
             <tr>
@@ -152,7 +324,7 @@
               <th class="col-digit">NO TPS</th>
               <th>NIK</th>
               <th class="col-nama-header">NAMA LENGKAP</th>
-              <th class="bg-yellow" style="background: #00b0f0 !important; color: white;">TPS</th>
+              <th>TPS</th>
               <th>NAMA ALIAS</th>
               <th>KADER</th>
               <th>KODE</th>
@@ -266,11 +438,10 @@
 
       const input = document.getElementById("searchInput");
       input.disabled = false;
-      document.getElementById("statusBar").textContent = `Siap. Total ${allData.length.toLocaleString('id-ID')} data dimuat.`;
-      input.focus();
+      document.getElementById("statusBar").innerHTML = `<span class="status-dot"></span> Siap • Total ${allData.length.toLocaleString('id-ID')} data dimuat`;
     },
     error: function() {
-      document.getElementById("statusBar").textContent = "Gagal memuat data. Periksa kembali tautan CSV Google Sheets Anda.";
+      document.getElementById("statusBar").textContent = "Gagal memuat data. Periksa kembali koneksi atau link CSV.";
     }
   });
 
@@ -295,7 +466,7 @@
         <td class="col-tps">${item.tps}</td>
         <td>${item.alias}</td>
         <td>${item.kader}</td>
-        <td class="center bold">${item.kode}</td>
+        <td class="col-kode">${item.kode}</td>
         <td class="center">${item.tmpLahir}</td>
         <td class="center">${item.tglLahir}</td>
         <td class="center">${item.jk}</td>
@@ -306,6 +477,14 @@
         <td class="center">${item.ket}</td>
       </tr>
     `;
+  }
+
+  // Tombol Kaca Pembesar / Submit: Jalankan filter & tutup keyboard Android
+  function handleSearchSubmit(e) {
+    if (e) e.preventDefault();
+    applyFilters();
+    const input = document.getElementById("searchInput");
+    input.blur(); // Menghilangkan fokus agar keyboard virtual Android langsung turun
   }
 
   function applyFilters() {
@@ -319,8 +498,8 @@
     const statusBar = document.getElementById("statusBar");
 
     if (!query && !fAlamat && !fRt && !fRw && !fTps) {
-      tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 15px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>`;
-      statusBar.textContent = `Siap. Total ${allData.length.toLocaleString('id-ID')} data dimuat.`;
+      tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 24px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>`;
+      statusBar.innerHTML = `<span class="status-dot"></span> Siap • Total ${allData.length.toLocaleString('id-ID')} data dimuat`;
       return;
     }
 
@@ -336,10 +515,10 @@
       return matchText && matchAlamat && matchRt && matchRw && matchTps;
     });
 
-    statusBar.textContent = `Ditemukan ${matches.length} data relevan` + (matches.length > 150 ? " (menampilkan 150 teratas)" : "") + " — Klik salah satu baris untuk melihat posisi di seluruh data.";
+    statusBar.innerHTML = `<span class="status-dot"></span> Ditemukan <b>${matches.length}</b> data` + (matches.length > 150 ? " (150 teratas)" : "") + " — Klik baris untuk lihat posisi lengkap";
 
     if (matches.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 15px; color: #ef4444;">Data tidak ditemukan sesuai filter.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 24px; color: #ef4444; font-weight: 600;">Data tidak ditemukan sesuai kata kunci/filter.</td></tr>`;
       return;
     }
 
@@ -349,15 +528,16 @@
   document.getElementById("searchInput").addEventListener("input", applyFilters);
 
   function resetSearch() {
-    document.getElementById("searchInput").value = "";
+    const input = document.getElementById("searchInput");
+    input.value = "";
+    input.blur();
     document.getElementById("filterAlamat").value = "";
     document.getElementById("filterRt").value = "";
     document.getElementById("filterRw").value = "";
     document.getElementById("filterTps").value = "";
     
-    document.getElementById("searchResultsBody").innerHTML = `<tr><td colspan="17" class="center" style="padding: 15px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>`;
-    document.getElementById("statusBar").textContent = `Siap. Total ${allData.length.toLocaleString('id-ID')} data dimuat.`;
-    document.getElementById("searchInput").focus();
+    document.getElementById("searchResultsBody").innerHTML = `<tr><td colspan="17" class="center" style="padding: 24px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>`;
+    document.getElementById("statusBar").innerHTML = `<span class="status-dot"></span> Siap • Total ${allData.length.toLocaleString('id-ID')} data dimuat`;
   }
 
   function renderFullTableOnce() {
@@ -367,6 +547,7 @@
   }
 
   function openFullView(uid) {
+    document.getElementById("searchInput").blur();
     renderFullTableOnce();
 
     document.getElementById("page-search").classList.add("hidden");
@@ -380,11 +561,11 @@
     if (targetRow && selectedItem) {
       targetRow.classList.add("highlighted-row");
       document.getElementById("focusInfo").textContent = 
-        `Posisi Terpilih: ${selectedItem.nama} (No. DPT Final: ${selectedItem.dptFinal} | TPS ${selectedItem.tps})`;
+        `Fokus Data: ${selectedItem.nama} (DPT Final: ${selectedItem.dptFinal} • TPS ${selectedItem.tps})`;
       
       setTimeout(() => {
         targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 50);
+      }, 60);
     }
   }
 
