@@ -11,6 +11,8 @@
       --header-bg: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       --accent-blue: #2563eb;
       --accent-blue-hover: #1d4ed8;
+      --accent-reset: #f59e0b;
+      --accent-reset-hover: #d97706;
       --border-table: #cbd5e1;
       --text-main: #0f172a;
       --text-muted: #64748b;
@@ -25,7 +27,7 @@
       top: 0;
       background: var(--header-bg);
       color: white;
-      padding: 12px 14px;
+      padding: 11px 14px;
       z-index: 100;
       box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
     }
@@ -45,10 +47,10 @@
       gap: 6px;
     }
 
-    /* Baris Input + Tombol Kaca Pembesar + Reset */
+    /* Baris Input + Tombol Cari + Tombol Reset Unik */
     .search-row {
       display: flex;
-      gap: 6px;
+      gap: 7px;
       margin-bottom: 8px;
     }
     .search-input-group {
@@ -57,7 +59,7 @@
       background: #ffffff;
       border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.12);
     }
     .search-input-group input[type="search"] {
       flex: 1;
@@ -85,18 +87,35 @@
     .btn-search-icon:active { background: var(--accent-blue-hover); }
 
     .btn-reset {
-      background: rgba(255, 255, 255, 0.14);
-      color: #f8fafc;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: var(--accent-reset);
+      color: #1e1b08;
+      border: 1px solid #fbbf24;
       border-radius: 8px;
-      padding: 0 12px;
+      padding: 0 13px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
-      transition: background 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+      transition: background 0.15s, transform 0.1s;
     }
-    .btn-reset:active { background: rgba(255, 255, 255, 0.25); }
+    .btn-reset:hover { background: var(--accent-reset-hover); color: #ffffff; }
+    .btn-reset:active { transform: scale(0.97); }
+
+    /* Label Bagian Sortir & Urutkan */
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin: 6px 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      letter-spacing: 0.2px;
+    }
 
     /* Baris Dropdown Filter */
     .filter-row {
@@ -104,11 +123,19 @@
       grid-template-columns: 1.5fr 1fr 1fr 1fr;
       gap: 6px;
     }
+
+    /* Baris Pengurutan ala Excel */
+    .sort-row {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 6px;
+    }
+
     select {
       width: 100%;
       padding: 7px 6px;
       border-radius: 7px;
-      border: 1px solid rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.22);
       font-size: 12px;
       background: #f8fafc;
       color: #0f172a;
@@ -116,14 +143,19 @@
       outline: none;
       cursor: pointer;
     }
+    select:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+    }
 
     .status-bar {
       font-size: 11px;
       color: #94a3b8;
-      margin-top: 7px;
+      margin-top: 8px;
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-wrap: wrap;
     }
     .status-dot {
       width: 7px;
@@ -175,7 +207,7 @@
       border-radius: 8px;
       border: 1px solid var(--border-table);
       overflow: auto;
-      max-height: calc(100vh - 135px);
+      max-height: calc(100vh - 210px);
       box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
     }
 
@@ -241,6 +273,18 @@
       border-bottom: 2px solid #dc2626;
       font-weight: 700;
     }
+
+    @media (max-width: 520px) {
+      .filter-row {
+        grid-template-columns: 1fr 1fr;
+      }
+      .sort-row {
+        grid-template-columns: 1.3fr 1fr;
+      }
+      .table-wrapper {
+        max-height: calc(100vh - 245px);
+      }
+    }
   </style>
 </head>
 <body>
@@ -263,21 +307,56 @@
             <span>Cari</span>
           </button>
         </div>
-        <button type="button" class="btn-reset" onclick="resetSearch()">Reset</button>
+        <button type="button" class="btn-reset" onclick="resetSearch()" title="Reset semua pencarian, filter, dan urutan">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+          <span>Reset</span>
+        </button>
       </form>
 
+      <div class="section-label">🔽 Sortir / Filter berdasarkan:</div>
       <div class="filter-row">
         <select id="filterAlamat" onchange="applyFilters()">
           <option value="">Semua Alamat</option>
         </select>
         <select id="filterRt" onchange="applyFilters()">
-          <option value="">RT</option>
+          <option value="">Semua RT</option>
         </select>
         <select id="filterRw" onchange="applyFilters()">
-          <option value="">RW</option>
+          <option value="">Semua RW</option>
         </select>
         <select id="filterTps" onchange="applyFilters()">
-          <option value="">TPS</option>
+          <option value="">Semua TPS</option>
+        </select>
+      </div>
+
+      <div class="section-label">↕️ Urutkan data berdasarkan kolom (seperti Excel):</div>
+      <div class="sort-row">
+        <select id="sortColumn" onchange="applyFilters()">
+          <option value="">Urutan Asli Data</option>
+          <option value="dptAwal">NO DPT AWAL</option>
+          <option value="dptFinal">NO DPT FINAL</option>
+          <option value="noTps">NO TPS</option>
+          <option value="nik">NIK</option>
+          <option value="nama">NAMA LENGKAP</option>
+          <option value="tps">TPS</option>
+          <option value="alias">NAMA ALIAS</option>
+          <option value="kader">KADER</option>
+          <option value="kode">KODE</option>
+          <option value="tmpLahir">TEMPAT LAHIR</option>
+          <option value="tglLahir">TANGGAL LAHIR</option>
+          <option value="jk">JK</option>
+          <option value="status">STATUS</option>
+          <option value="alamat">ALAMAT</option>
+          <option value="rt">RT</option>
+          <option value="rw">RW</option>
+          <option value="ket">KET</option>
+        </select>
+        <select id="sortDirection" onchange="applyFilters()">
+          <option value="asc">A → Z / Kecil → Besar</option>
+          <option value="desc">Z → A / Besar → Kecil</option>
         </select>
       </div>
 
@@ -309,7 +388,7 @@
             </tr>
           </thead>
           <tbody id="searchResultsBody">
-            <tr><td colspan="17" class="center" style="padding: 24px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>
+            <tr><td colspan="17" class="center" style="padding: 24px; color: #64748b;">Silakan ketik kata kunci, pilih filter, atau atur urutan data di atas...</td></tr>
           </tbody>
         </table>
       </div>
@@ -474,6 +553,29 @@
     });
   }
 
+  function compareValues(aVal, bVal, direction) {
+    const aStr = (aVal ?? "").toString().trim();
+    const bStr = (bVal ?? "").toString().trim();
+
+    // Kosong selalu diletakkan di akhir agar rapi seperti Excel
+    if (!aStr && !bStr) return 0;
+    if (!aStr) return 1;
+    if (!bStr) return -1;
+
+    const numA = Number(aStr.replace(/[^0-9.-]+/g, ""));
+    const numB = Number(bStr.replace(/[^0-9.-]+/g, ""));
+    const bothNumeric = !isNaN(numA) && !isNaN(numB) && /^[+-]?\d+([.,]\d+)?$/.test(aStr) && /^[+-]?\d+([.,]\d+)?$/.test(bStr);
+
+    let cmp = 0;
+    if (bothNumeric) {
+      cmp = numA - numB;
+    } else {
+      cmp = aStr.localeCompare(bStr, "id", { sensitivity: "base", numeric: true });
+    }
+
+    return direction === "desc" ? -cmp : cmp;
+  }
+
   function createRowHtml(item, withId = false) {
     return `
       <tr ${withId ? `id="row-${item.uid}"` : `onclick="openFullView(${item.uid})"`}>
@@ -511,21 +613,25 @@
     const fRt = document.getElementById("filterRt").value;
     const fRw = document.getElementById("filterRw").value;
     const fTps = document.getElementById("filterTps").value;
+    const sortCol = document.getElementById("sortColumn").value;
+    const sortDir = document.getElementById("sortDirection").value;
 
     const tbody = document.getElementById("searchResultsBody");
     const statusBar = document.getElementById("statusBar");
 
-    if (!query && !fAlamat && !fRt && !fRw && !fTps) {
+    const hasCriteria = Boolean(query || fAlamat || fRt || fRw || fTps || sortCol);
+
+    if (!hasCriteria) {
       currentMatches = [];
       renderedSearchCount = 0;
-      tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 24px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 24px; color: #64748b;">Silakan ketik kata kunci, pilih filter, atau atur urutan data di atas...</td></tr>`;
       statusBar.innerHTML = `<span class="status-dot"></span> Siap • Total ${allData.length.toLocaleString('id-ID')} data dimuat`;
       return;
     }
 
     const keywords = query ? query.split(/\s+/) : [];
 
-    currentMatches = allData.filter(item => {
+    let matches = allData.filter(item => {
       const matchText = keywords.every(kw => item.searchIndex.includes(kw));
       const matchAlamat = !fAlamat || item.alamat === fAlamat;
       const matchRt = !fRt || item.rt === fRt;
@@ -535,6 +641,12 @@
       return matchText && matchAlamat && matchRt && matchRw && matchTps;
     });
 
+    if (sortCol) {
+      matches = [...matches].sort((a, b) => compareValues(a[sortCol], b[sortCol], sortDir));
+    }
+
+    currentMatches = matches;
+
     if (currentMatches.length === 0) {
       renderedSearchCount = 0;
       statusBar.innerHTML = `<span class="status-dot"></span> Ditemukan <b>0</b> data`;
@@ -542,7 +654,6 @@
       return;
     }
 
-    // Reset scroll ke atas setiap kali filter berubah
     document.getElementById("searchTableWrapper").scrollTop = 0;
     renderedSearchCount = 0;
     tbody.innerHTML = "";
@@ -552,8 +663,9 @@
   function renderMoreSearchResults() {
     const tbody = document.getElementById("searchResultsBody");
     const statusBar = document.getElementById("statusBar");
+    const sortSelect = document.getElementById("sortColumn");
+    const sortLabel = sortSelect.value ? ` • Urut: <b>${sortSelect.options[sortSelect.selectedIndex].text}</b>` : "";
 
-    // Hapus baris tombol "Muat data selanjutnya" yang lama jika ada
     const oldLoadMoreRow = document.getElementById("search-load-more-row");
     if (oldLoadMoreRow) oldLoadMoreRow.remove();
 
@@ -579,7 +691,7 @@
 
     tbody.insertAdjacentHTML("beforeend", htmlChunk);
 
-    statusBar.innerHTML = `<span class="status-dot"></span> Menampilkan <b>${renderedSearchCount.toLocaleString('id-ID')}</b> dari <b>${currentMatches.length.toLocaleString('id-ID')}</b> data — Klik baris untuk lihat posisi lengkap`;
+    statusBar.innerHTML = `<span class="status-dot"></span> Menampilkan <b>${renderedSearchCount.toLocaleString('id-ID')}</b> dari <b>${currentMatches.length.toLocaleString('id-ID')}</b> data${sortLabel} — Klik baris untuk lihat posisi lengkap`;
   }
 
   document.getElementById("searchInput").addEventListener("input", applyFilters);
@@ -592,10 +704,12 @@
     document.getElementById("filterRt").value = "";
     document.getElementById("filterRw").value = "";
     document.getElementById("filterTps").value = "";
+    document.getElementById("sortColumn").value = "";
+    document.getElementById("sortDirection").value = "asc";
     
     currentMatches = [];
     renderedSearchCount = 0;
-    document.getElementById("searchResultsBody").innerHTML = `<tr><td colspan="17" class="center" style="padding: 24px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>`;
+    document.getElementById("searchResultsBody").innerHTML = `<tr><td colspan="17" class="center" style="padding: 24px; color: #64748b;">Silakan ketik kata kunci, pilih filter, atau atur urutan data di atas...</td></tr>`;
     document.getElementById("statusBar").innerHTML = `<span class="status-dot"></span> Siap • Total ${allData.length.toLocaleString('id-ID')} data dimuat`;
   }
 
