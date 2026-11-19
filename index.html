@@ -150,6 +150,23 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
 
+    /* Tombol Muat Data Selanjutnya */
+    .btn-load-more {
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      color: #ffffff;
+      background: var(--accent-blue);
+      border: none;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25);
+      transition: background 0.15s;
+    }
+    .btn-load-more:active {
+      background: var(--accent-blue-hover);
+    }
+
     /* Kontainer Tabel */
     .container { padding: 8px; }
     .hidden { display: none !important; }
@@ -268,7 +285,7 @@
     </div>
 
     <div class="container">
-      <div class="table-wrapper">
+      <div class="table-wrapper" id="searchTableWrapper">
         <table>
           <thead>
             <tr>
@@ -346,6 +363,10 @@
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTvjBzHOvvGXtiO2WqzpK8EacTQ0uenF5lfHfrekELgk0LXYyTUzeWAyftX18ZwsgefThcLw4yDqM4-/pub?gid=0&single=true&output=csv";
 
   let allData = [];
+  let currentMatches = [];
+  let renderedSearchCount = 0;
+  const SEARCH_PAGE_SIZE = 500;
+
   let currentWindowRange = { start: 0, end: 0 };
 
   Papa.parse(CSV_URL, {
@@ -495,6 +516,8 @@
     const statusBar = document.getElementById("statusBar");
 
     if (!query && !fAlamat && !fRt && !fRw && !fTps) {
+      currentMatches = [];
+      renderedSearchCount = 0;
       tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 24px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>`;
       statusBar.innerHTML = `<span class="status-dot"></span> Siap • Total ${allData.length.toLocaleString('id-ID')} data dimuat`;
       return;
@@ -502,7 +525,7 @@
 
     const keywords = query ? query.split(/\s+/) : [];
 
-    const matches = allData.filter(item => {
+    currentMatches = allData.filter(item => {
       const matchText = keywords.every(kw => item.searchIndex.includes(kw));
       const matchAlamat = !fAlamat || item.alamat === fAlamat;
       const matchRt = !fRt || item.rt === fRt;
@@ -512,14 +535,51 @@
       return matchText && matchAlamat && matchRt && matchRw && matchTps;
     });
 
-    statusBar.innerHTML = `<span class="status-dot"></span> Ditemukan <b>${matches.length}</b> data` + (matches.length > 150 ? " (150 teratas)" : "") + " — Klik baris untuk lihat posisi lengkap";
-
-    if (matches.length === 0) {
+    if (currentMatches.length === 0) {
+      renderedSearchCount = 0;
+      statusBar.innerHTML = `<span class="status-dot"></span> Ditemukan <b>0</b> data`;
       tbody.innerHTML = `<tr><td colspan="17" class="center" style="padding: 24px; color: #ef4444; font-weight: 600;">Data tidak ditemukan sesuai kata kunci/filter.</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = matches.slice(0, 150).map(item => createRowHtml(item, false)).join("");
+    // Reset scroll ke atas setiap kali filter berubah
+    document.getElementById("searchTableWrapper").scrollTop = 0;
+    renderedSearchCount = 0;
+    tbody.innerHTML = "";
+    renderMoreSearchResults();
+  }
+
+  function renderMoreSearchResults() {
+    const tbody = document.getElementById("searchResultsBody");
+    const statusBar = document.getElementById("statusBar");
+
+    // Hapus baris tombol "Muat data selanjutnya" yang lama jika ada
+    const oldLoadMoreRow = document.getElementById("search-load-more-row");
+    if (oldLoadMoreRow) oldLoadMoreRow.remove();
+
+    const nextLimit = Math.min(currentMatches.length, renderedSearchCount + SEARCH_PAGE_SIZE);
+    const slice = currentMatches.slice(renderedSearchCount, nextLimit);
+    let htmlChunk = slice.map(item => createRowHtml(item, false)).join("");
+
+    renderedSearchCount = nextLimit;
+    const remaining = currentMatches.length - renderedSearchCount;
+
+    if (remaining > 0) {
+      const nextBatch = Math.min(SEARCH_PAGE_SIZE, remaining);
+      htmlChunk += `
+        <tr id="search-load-more-row" style="cursor: default;">
+          <td colspan="17" class="center" style="background: #f8fafc; padding: 12px;">
+            <button type="button" class="btn-load-more" onclick="renderMoreSearchResults()">
+              ⬇️ Lihat ${nextBatch} data selanjutnya (Tersisa ${remaining.toLocaleString('id-ID')} data lagi)
+            </button>
+          </td>
+        </tr>
+      `;
+    }
+
+    tbody.insertAdjacentHTML("beforeend", htmlChunk);
+
+    statusBar.innerHTML = `<span class="status-dot"></span> Menampilkan <b>${renderedSearchCount.toLocaleString('id-ID')}</b> dari <b>${currentMatches.length.toLocaleString('id-ID')}</b> data — Klik baris untuk lihat posisi lengkap`;
   }
 
   document.getElementById("searchInput").addEventListener("input", applyFilters);
@@ -533,6 +593,8 @@
     document.getElementById("filterRw").value = "";
     document.getElementById("filterTps").value = "";
     
+    currentMatches = [];
+    renderedSearchCount = 0;
     document.getElementById("searchResultsBody").innerHTML = `<tr><td colspan="17" class="center" style="padding: 24px; color: #64748b;">Silakan ketik kata kunci atau pilih filter di atas...</td></tr>`;
     document.getElementById("statusBar").innerHTML = `<span class="status-dot"></span> Siap • Total ${allData.length.toLocaleString('id-ID')} data dimuat`;
   }
@@ -625,7 +687,6 @@
       document.getElementById("focusInfo").textContent = 
         `Fokus Data: ${selectedItem.nama} (DPT Final: ${selectedItem.dptFinal} • TPS ${selectedItem.tps})`;
       
-      // Menggunakan behavior 'auto' agar instan dan tidak lag di HP
       targetRow.scrollIntoView({ behavior: "auto", block: "center" });
     }
   }
@@ -633,7 +694,6 @@
   function openFullView(uid) {
     document.getElementById("searchInput").blur();
 
-    // Mendaftarkan history agar tombol back HP berfungsi
     history.pushState({ page: 'full', uid: uid }, "", "#detail");
 
     document.getElementById("page-search").classList.add("hidden");
@@ -647,7 +707,6 @@
     document.getElementById("page-search").classList.remove("hidden");
   }
 
-  // Mendengarkan tombol kembali (back) fisik/bawaan HP
   window.addEventListener('popstate', function(event) {
     const pageFull = document.getElementById("page-full");
     if (pageFull && !pageFull.classList.contains('hidden')) {
